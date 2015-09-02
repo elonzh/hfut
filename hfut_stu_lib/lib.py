@@ -1,54 +1,14 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals
-import sys
 
-reload(sys)
-sys.setdefaultencoding('utf-8')
-"""
-api操作对应的爬虫
-"""
-import json
 import urlparse
 import re
-import time
-from pprint import pprint
-
 import requests
+
 from bs4 import SoupStrainer, BeautifulSoup
 
-from hfut_stu_lib import hfut_stu_lib_logger
-
-
-# todo: 尚未补充异常处理，待功能完善后进行补充
-JSON_CODE = {200: "查询到的正确结果",
-             100: "请求格式错误或服务器处理异常, 请加群 313903239 进行反馈",
-             101: "非法请求, 没有获取到json数据",
-             301: "辅导员暂未开启评测或评测已结束, 请联系你的导员开启评测",
-             302: "你已经提交了评测 _(:зゝ∠)_ , 不能再改了哦~",
-             303: "你提交的评测人数不正确 _(:зゝ∠)_",
-             304: "你不能评测你自己"}
-
-
-def render_result(code=200, result=None):
-    base_dict = {'code': code, 'result': JSON_CODE[code]}
-    if code == 200 and result is not None:
-        try:
-            assert isinstance(result, (list, dict, str))
-        except AssertionError:
-            raise TypeError('result 类型错误！')
-        base_dict['result'] = result
-    hfut_stu_lib_logger.info("json rendered: {}".format(base_dict))
-    return base_dict
-
-
-def cal_time(func):
-    def wrapper(*args, **kwargs):
-        start_time = time.clock()
-        res = func(*args, **kwargs)
-        hfut_stu_lib_logger.info('{:s} 执行用时: {:f}'.format(func.__name__, time.clock() - start_time))
-        return res
-
-    return wrapper
+from logger import hfut_stu_lib_logger
+from core import get_tr_strs
 
 
 def get_point(grade_str):
@@ -85,7 +45,6 @@ def get_point(grade_str):
         else:
             return 0.0
     except ValueError:
-        assert grade_str in ('优', '良', '中', '及格', '不及格')
         if grade_str == '优':
             return 3.9
         elif grade_str == '良':
@@ -94,8 +53,10 @@ def get_point(grade_str):
             return 2.0
         elif grade_str == '及格':
             return 1.2
-        else:
+        elif grade_str == '不及格':
             return 0.0
+        else:
+            raise ValueError('{:s} 不是有效的成绩'.format(grade_str))
 
 
 def cal_gpa(grades):
@@ -127,41 +88,8 @@ def cal_gpa(grades):
     return ave_point, gpa
 
 
-def get_tr_strs(trs):
-    """
-    将没有值但有必须要的单元格的值设置为 None
-    将 <tr> 标签数组内的单元格文字解析出来并返回一个二维列表
-    :param trs: <tr> 标签数组, 为 BeautifulSoup 节点对象
-    :return: 二维列表
-    """
-    tr_strs = []
-    for tr in trs:
-        strs = []
-        for td in tr.find_all('td'):
-            # 使用 stripped_strings 防止 td 中还有标签
-            # 如: 不及格课程会有一个<font>标签导致tds[i].string为None
-            # <FONT COLOR=#FF0000>37    </FONT></TD>
-            # stripped_strings 是一个生成器, 没有长度
-            # 生成器迭代一次就没有了, 需要转换为 tuple 或 list 进行保存
-            s_list = tuple(td.stripped_strings)
-            l = len(s_list)
-            if l == 1:
-                strs.append(s_list[0])
-            elif l == 0:
-                strs.append(None)
-            else:
-                msg = 'td标签中含有多个字符串\n{:s}'.format(td)
-                print s_list
-                raise ValueError(msg)
-        tr_strs.append(strs)
-    return tr_strs
-
-
 class StuLib(object):
     HOST_URL = 'http://172.18.6.99/'
-    # 可选课程缓存 todo: 全局缓存可能更有效，当然数据库缓存是最有效的，但是需要解决缓存更新的问题
-    optional_lessons_cache = {'x': None, 'b': None, 'jh': None}
-    selected_lessons_cache = None
 
     def __init__(self, stu_id, password):
         self.stu_id = stu_id
@@ -176,10 +104,10 @@ class StuLib(object):
         session.headers = headers
         r = session.post(login_url, data=data, allow_redirects=False)
         if r.status_code != 302:
-            raise ValueError('登陆失败！')
+            raise ValueError('登陆失败, 请检查你的学号和密码')
         return session
 
-    def get_url(self, url_code):
+    def get_url(self, func_name):
         """
         外网 222.195.8.201
         机械工程系 172.18.6.93 172.18.6.94
@@ -187,72 +115,68 @@ class StuLib(object):
         化工与食品加工系 172.18.6.97
         建筑工程系 172.18.6.98
         商学系 172.18.6.99
-        :param url_code:
-        :return:
+        :param func_name:
         """
         urls = {
-            # 登陆页
+            # 登陆页 POST 无需登陆
             'login': 'pass.asp',
-            # 需要登陆
-            # 个人信息查询
-            'stu_info': 'student/asp/xsxxxxx.asp',
-            # 成绩查询
-            'stu_grades': 'student/asp/Select_Success.asp',
-            # 课表查询
-            'stu_timetable': 'student/asp/grkb1.asp',
-            # 收费查询
-            'stu_feeds': 'student/asp/Xfsf_Count.asp',
-            # 查询学期代码与专业代码
-            'code': 'student/asp/xqjh.asp',
-            # 修改密码 POST oldpwd=hfutxcstu&newpwd=hfutxcstu&new2pwd=hfutxcstu
+            # 个人信息查询 GET 
+            'get_stu_info': 'student/asp/xsxxxxx.asp',
+            # 成绩查询 GET 
+            'get_stu_grades': 'student/asp/Select_Success.asp',
+            # 课表查询 GET 
+            'get_stu_timetable': 'student/asp/grkb1.asp',
+            # 收费查询 GET 
+            'get_stu_feeds': 'student/asp/Xfsf_Count.asp',
+            # 查询学期代码与专业代码 GET 
+            'get_code': 'student/asp/xqjh.asp',
+            # 修改密码 POST 
             'change_password': 'student/asp/amend_password_jg.asp',
-            # 修改电话 POST tel=110
+            # 修改电话 POST 
             'set_telephone': 'student/asp/amend_tel.asp',
 
-            # 无需登陆
-            # 教学班查询 GET xqdm=026&kcdm=0400073B&jxbh=0001
-            'class_students': 'student/asp/Jxbmdcx_1.asp',
-            # 教学班详情, 选课时用得上 GET kcdm=0532082B&jxbh=0003&xqdm=026
-            'class_info': 'student/asp/xqkb1_1.asp',
-            # 课程查询 POST xqdm=021&kcdm=&kcmc=%D3%A2%D3%EF
-            'kccx': 'student/asp/xqkb1.asp',
-            # 计划查询 POST xqdm=021&kclxdm=1&ccjbyxzy=0120123111
-            'jhcx': 'student/asp/xqkb2.asp',
+            # 教学班查询 GET 无需登陆
+            'get_class_students': 'student/asp/Jxbmdcx_1.asp',
+            # 教学班详情 GET 无需登陆 选课时用得上
+            'get_class_info': 'student/asp/xqkb1_1.asp',
+            # 课程查询 POST
+            'get_lesson_detail': 'student/asp/xqkb1.asp',
+            # 计划查询 POST 无需登陆
+            'get_teaching_plan': 'student/asp/xqkb2.asp',
+            # 教师信息 GET 无需登陆
+            'get_teacher_info': 'teacher/asp/teacher_info.asp',
 
             # ========== 选课功能相关 ==========
-            # 第一轮
-            # 可选课程 需要登陆 GET kclx=x
-            'optional_lessons': 'student/asp/select_topLeft.asp',
-            # 教学班级 无需登录
-            'lesson_classes': 'student/asp/select_topRight.asp',
-            # 已选中课程
-            # '': 'student/asp/select_downLeft.asp',
-            # 已选课程
-            # '': 'student/asp/select_downRight.asp',
-            # 提交选课 POST xh=2013217413&kcdm=9900037X&jxbh=0001
+            # 可选课程  GET 第一轮
+            'get_optional_lessons': 'student/asp/select_topLeft.asp',
+            # 可选课程  GET 第二，三轮 结果与第一轮一致
+            # 'get_optional_lessons': 'student/asp/select_topLeft_f3.asp',
+
+            # 教学班级 GET 无需登录
+            'get_lesson_classes': 'student/asp/select_topRight.asp',
+            # 教学班级 GET 无需登录 有课程容量时间等信息
+            # 'get_lesson_classes': 'student/asp/select_topRight_f3.asp',
+
+            # 已选课程 GET
+            'get_selected_lessons': 'student/asp/select_down_f3.asp',
+            # 已选课程 第二，三轮 参数与结果与第一轮一致
+            # 'get_selected_lessons': 'student/asp/select_downRight.asp',
+
+            # 提交选课 POST
             # 'select_lesson': 'student/asp/selectKC_submit.asp',
-            # 第三轮
-            # 可选课程 需要登陆 GET kclx=x 结果与第一轮一致
-            # '': 'student/asp/select_topLeft_f3.asp',
-            # 教学班级 无需登录 GET 没有课程容量时间等信息
-            # 'lesson_classes': 'student/asp/select_topRight_f3.asp',
-            # 已选课程
-            'selected_lessons': 'student/asp/select_down_f3.asp',
-            # 提交选课
-            'select_lesson': 'student/asp/selectKC_submit_f3.asp'
+            'select_lesson': 'student/asp/selectKC_submit_f3.asp',
         }
 
-        url = urlparse.urljoin(self.HOST_URL, urls[url_code])
-        hfut_stu_lib_logger.info('获得 {} 的url:{}'.format(url_code, url))
+        url = urlparse.urljoin(self.HOST_URL, urls[func_name])
+        hfut_stu_lib_logger.info('获得 {} 的url:{}'.format(func_name, url))
         return url
 
     def get_code(self):
         """
         获取专业, 学期的代码和名称
-        :return:
         """
         session = self.session
-        url = self.get_url('code')
+        url = self.get_url('get_code')
         page = session.get(url).text
 
         ss = SoupStrainer('select')
@@ -266,7 +190,7 @@ class StuLib(object):
 
     def get_stu_info(self):
         session = self.session
-        url = self.get_url('stu_info')
+        url = self.get_url('get_stu_info')
         page = session.get(url).text
         ss = SoupStrainer('table')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
@@ -299,7 +223,7 @@ class StuLib(object):
 
     def get_stu_grades(self):
         session = self.session
-        url = self.get_url('stu_grades')
+        url = self.get_url('get_stu_grades')
         page = session.get(url).text
         ss = SoupStrainer('table', width='582')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
@@ -315,7 +239,7 @@ class StuLib(object):
 
     def get_stu_timetable(self, detail=False):
         session = self.session
-        url = self.get_url('stu_timetable')
+        url = self.get_url('get_stu_timetable')
         page = session.get(url).text
         ss = SoupStrainer('table', width='840')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
@@ -367,7 +291,7 @@ class StuLib(object):
 
     def get_stu_feeds(self):
         session = self.session
-        url = self.get_url('stu_feeds')
+        url = self.get_url('get_stu_feeds')
         page = session.get(url).text
         ss = SoupStrainer('table', bgcolor='#000000')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
@@ -382,17 +306,31 @@ class StuLib(object):
         return feeds
 
     def get_teacher_info(self, jsh):
-        '''
+        """
         查询教师信息
         :param jsh:8位教师号
-        :return:返回查询结果
-        '''
-        # todo:完成教师信息解析
-        session = self.session
-        r = session.get('http://222.195.8.201/teacher/asp/teacher_info.asp?jsh=%s' % jsh)
-        if '无该教师信息' in r.text:
-            return None
-        return r
+        """
+        session = requests.Session()
+        url = self.get_url('get_teacher_info')
+        params = {'jsh': jsh}
+        page = session.get(url, params=params).text
+        ss = SoupStrainer('table')
+        bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
+
+        value_list = get_tr_strs(bs.find_all('tr'))
+        # 第一行最后有个照片项
+        teacher_info = {'照片': value_list[0].pop()}
+        # 第五行最后有两个空白
+        value_list[4] = value_list[4][:2]
+        # 第六行有两个 联系电话 键
+        phone = value_list[5]
+        teacher_info['联系电话'] = phone[1::2]
+        value_list.remove(phone)
+        # 解析其他项
+        for v in value_list:
+            for i in xrange(0, len(v), 2):
+                teacher_info[v[i]] = v[i + 1]
+        return teacher_info
 
     def get_class_students(self, xqdm, kcdm, jxbh):
         """
@@ -400,10 +338,9 @@ class StuLib(object):
         :param xqdm: 学期代码
         :param kcdm: 课程代码
         :param jxbh: 教学班号
-        :return:
         """
         session = requests.Session()
-        url = self.get_url('class_students')
+        url = self.get_url('get_class_students')
         params = {'xqdm': xqdm,
                   'kcdm': kcdm,
                   'jxbh': jxbh}
@@ -420,7 +357,7 @@ class StuLib(object):
         # 二逼教务系统将 <tr> 标签写成了 <td> , 只好直接访问兄弟节点取得这个值
         class_name = bs.table.tbody.tr.next_sibling.next_sibling.text.strip()
         class_detail['班级名称'] = class_name
-
+        # todo: Test failed ! IndexError: list index out of range
         keys = tuple(trs[1].stripped_strings)
         value_list = [tr.stripped_strings for tr in trs[2:]]
         stus = []
@@ -436,9 +373,8 @@ class StuLib(object):
         :param xqdm: 学期代码
         :param kcdm: 课程代码
         :param jxbh: 教学班号
-        :return:
         """
-        url = self.get_url('class_info')
+        url = self.get_url('get_class_info')
         params = {'xqdm': xqdm,
                   'kcdm': kcdm,
                   'jxbh': jxbh}
@@ -451,15 +387,21 @@ class StuLib(object):
         key_list = [tr.stripped_strings for tr in bs.find_all('tr', bgcolor='#B4B9B9')]
         assert len(key_list) == 3
         # 有六行, 前三行与 key_list 对应, 后四行是单行属性, 键与值在同一行
-        # todo: get_tr_strs 处理失败
-        value_list = get_tr_strs(bs.find_all('tr', bgcolor='#D6D3CE'))
-        assert len(value_list) == 7
+        trs = bs.find_all('tr', bgcolor='#D6D3CE')
+        # 最后的 备注， 禁选范围 两行外面包裹了一个 'tr' bgcolor='#D6D3CE' 时间地点 ......
+        tr4 = trs[4]
+        special_kv = tuple(tr4.stripped_strings)[:2]
+        trs.remove(tr4)
+
+        value_list = get_tr_strs(trs)
+        assert len(value_list) == 6
 
         class_info = {}
         # 前三行, 注意 value_list 第三行是有两个单元格为 None, 但key_list 用的是 tr.stripped_strings, zip 时消去了这一部分
         map(lambda seq: class_info.update(dict(zip(seq[0], seq[1]))), zip(key_list, value_list))
         # 后四行
-        class_info.update(dict(value_list[3:]))
+        class_info.update(value_list[3:])
+        class_info.update((special_kv,))
         return class_info
 
     def get_lesson_detail(self, xqdm, kcdm=None, kcmc=None):
@@ -468,17 +410,14 @@ class StuLib(object):
         :param xqdm: 学期代码
         :param kcdm: 课程代码
         :param kcmc: 课程名称
-        :return:
         """
+        # todo:完成课程查询， 使用 kcdm 无法查询成功
         if kcdm is None and kcmc is None:
-            # todo: 返回错误提示信息, 待json规范完成后进行补充
-            return False
+            raise ValueError('kcdm 和 kcdm 参数必须至少存在一个')
         session = requests.Session()
-        # session.headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        url = self.get_url('kccx')
+        url = self.get_url('get_lesson_detail')
         data = {'xqdm': xqdm,
                 'kcdm': kcdm,
-                # todo: 使用 kcdm 无法查询成功
                 'kcmc': kcmc}
         page = session.post(url, data=data).text
         print page
@@ -487,12 +426,11 @@ class StuLib(object):
         """
         计划查询
         :param xqdm: 学期代码
-        :param kclxdm: 课程类型代码
+        :param kclxdm: 课程类型代码 必修为 1， 任选为 3
         :param ccjbyxzy: 专业
-        :return:
         """
         session = requests.Session()
-        url = self.get_url('jhcx')
+        url = self.get_url('get_teaching_plan')
 
         data = {'xqdm': xqdm,
                 'kclxdm': kclxdm,
@@ -515,9 +453,8 @@ class StuLib(object):
         :param oldpwd: 旧密码
         :param newpwd: 新密码
         :param new2pwd: 重复新密码
-        :return:
         """
-        p = re.compile(r'[\da-zA-Z]{6,12}')
+        p = re.compile(r'^[\da-z]{6,12}$')
         # 若不满足密码修改条件便不做请求
         if oldpwd != self.password or newpwd != new2pwd or not p.match(newpwd):
             return False
@@ -539,16 +476,18 @@ class StuLib(object):
             self.password = newpwd
             return True
         else:
-            hfut_stu_lib_logger.warning(res)
+            hfut_stu_lib_logger.warning('密码修改失败\noldpwd: {:s}\nnewpwd: {:s}\nnew2pwd: {:s}\ntext: {:s}'.format(
+                oldpwd, newpwd, new2pwd, res
+            ))
             return False
 
     def set_telephone(self, tel):
         """
         更新电话
         :param tel: 电话号码
-        :return:
         """
-        p = re.compile(r'[\d-]{7,13}')
+        tel = unicode(tel)
+        p = re.compile(r'^\d{11}$|^\d{4}-\d{7}$')
         if not p.match(tel):
             return False
 
@@ -565,13 +504,10 @@ class StuLib(object):
         """
         获取可选课程, 并不判断是否选满
         :param kclx: 课程类型参数,只有三个值,{x:全校公选课, b:全校必修课, jh:本专业计划},默认为'x'
-        :return:
         """
-        if self.optional_lessons_cache[kclx]:
-            return self.optional_lessons_cache[kclx]['已满'].extend(self.optional_lessons_cache[kclx]['未满'])
         if kclx in ('x', 'b', 'jh'):
             session = self.session
-            url = self.get_url('optional_lessons')
+            url = self.get_url('get_optional_lessons')
             params = {'kclx': kclx}
             page = session.get(url, params=params, allow_redirects=False).text
             ss = SoupStrainer('table', id='KCTable')
@@ -586,7 +522,6 @@ class StuLib(object):
                           '开课院系': values[3],
                           '学分': values[4]}
                 lessons.append(lesson)
-            self.optional_lessons_cache[kclx] = {'已满': [], '未满': lessons}
             return lessons
         else:
             raise ValueError('kclx 参数不正确！')
@@ -594,12 +529,9 @@ class StuLib(object):
     def get_selected_lessons(self):
         """
         获取已选课程
-        :return:已选课程信息
         """
-        if self.selected_lessons_cache:
-            return self.selected_lessons_cache
         session = self.session
-        url = self.get_url('selected_lessons')
+        url = self.get_url('get_selected_lessons')
         page = session.get(url, allow_redirects=False).text
         ss = SoupStrainer('table', id='TableXKJG')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
@@ -626,39 +558,36 @@ class StuLib(object):
 
     def get_lesson_classes(self, kcdm, detail=False):
         """
-        获取教学班级
+        获取选课系统中课程的可选教学班级
         :param kcdm:课程代码
-        :return:教学班级信息
         """
         if self.is_lesson_selected(kcdm):
-            # todo: 已选课程会给出警告
-            return None
-        else:
-            session = requests.Session()
-            params = {'kcdm': kcdm}
-            url = self.get_url('lesson_classes')
-            r = session.get(url, params=params, allow_redirects=False)
-            ss = SoupStrainer('table', id='JXBTable')
-            bs = BeautifulSoup(r.text, 'html.parser', parse_only=ss)
-            trs = bs.find_all('tr')
+            hfut_stu_lib_logger.warning('你已经选了课程 {:s}'.format(kcdm))
+        session = requests.Session()
+        params = {'kcdm': kcdm}
+        url = self.get_url('get_lesson_classes')
+        r = session.get(url, params=params, allow_redirects=False)
+        ss = SoupStrainer('table', id='JXBTable')
+        bs = BeautifulSoup(r.text, 'html.parser', parse_only=ss)
+        trs = bs.find_all('tr')
 
-            lesson_classes = []
-            for tr in trs:
-                klass = {}
-                tds = tr.find_all('td')
-                assert len(tds) == 5
-                klass['教学班号'] = tds[1].string.strip()
-                klass['教师'] = tds[2].text.strip()
-                klass['优选范围'] = tds[3].text.strip()
+        lesson_classes = []
+        for tr in trs:
+            klass = {}
+            tds = tr.find_all('td')
+            assert len(tds) == 5
+            klass['教学班号'] = tds[1].string.strip()
+            klass['教师'] = tds[2].text.strip()
+            klass['优选范围'] = tds[3].text.strip()
 
-                if detail:
-                    href = tds[1].a['href']
-                    # 匹配当前的学期代码
-                    xqdm = re.search(r"(?<=,')\d{3}(?='\))", href).group()
-                    klass.update(self.get_class_info(xqdm, kcdm, klass['教学班号']))
+            if detail:
+                href = tds[1].a['href']
+                # 匹配当前的学期代码
+                xqdm = re.search(r"(?<=,')\d{3}(?='\))", href).group()
+                klass.update(self.get_class_info(xqdm, kcdm, klass['教学班号']))
 
-                lesson_classes.append(klass)
-            return lesson_classes
+            lesson_classes.append(klass)
+        return lesson_classes
 
     def select_lesson(self, kcdm, jxbh=None):
         '''
@@ -677,7 +606,7 @@ class StuLib(object):
             for lesson in selected_lessons:
                 kcdms.append(lesson['课程代码'])
                 jxbhs.append(lesson['教学班号'])
-        # 添加所选课程
+        # 选择多个课程
         if isinstance(kcdm, (list, tuple, set)):
             # 去重
             kcdm = set(kcdm)
@@ -687,9 +616,8 @@ class StuLib(object):
                     for class_ in teaching_classes:
                         kcdms.append(id)
                         jxbhs.append(class_['教学班号'])
-        # 任意班级匹配
         elif isinstance(kcdm, (unicode, str)):
-            # TODO:未对jxbh做类型判断
+            # 任意班级匹配
             if jxbh is None:
                 teaching_classes = self.get_lesson_classes(kcdm)
                 if teaching_classes is not None:
@@ -700,8 +628,7 @@ class StuLib(object):
                 kcdms.append(kcdm)
                 jxbhs.append(jxbh)
         else:
-            raise TypeError
-        # self.session.headers = {'Referer': 'http://222.195.8.201/student/asp/select_topLeft_f3.asp'}
+            raise TypeError('kcdm 为一个序列或者字符串而不是 {:s}'.format(type(kcdm)))
         data = {'xh': self.stu_id, 'kcdm': kcdms, 'jxbh': jxbhs}
         r = session.post(self.get_url('select_lesson'), data=data, allow_redirects=False)
 
@@ -715,8 +642,6 @@ class StuLib(object):
             fp.close()
             strs = list(bs.stripped_strings)[0:-3]
             results = []
-            # for str in strs:
-            #     print str
             # todo: 只输出了结果，没有反馈到缓存中
             print '=====选课结果如下====='
             print '新提交课程数：', len(strs)
@@ -749,7 +674,6 @@ class StuLib(object):
                         kcdms.append(lesson['课程代码'])
                         jxbhs.append(lesson['教学班号'])
             # 添加所选课程
-            # self.session.headers = {'Referer': 'http://222.195.8.201/student/asp/select_topLeft_f3.asp'}
             data = {'xh': self.stu_id, 'kcdm': kcdms, 'jxbh': jxbhs}
             r = session.post(self.get_url('select_lesson'), data=data,
                              allow_redirects=False)
@@ -763,31 +687,3 @@ class StuLib(object):
                     print new_num, old_num
         else:
             print kcdm, '不是已选课程'
-
-
-if __name__ == '__main__':
-    stu = StuLib(2013217413, '1234567')
-    # stu = StuLib(2013217399, '8280613')
-    # stu = StuLib(2013217427, '217427')
-    import uniout
-
-    # pprint(stu.get_stu_info())
-    # pprint(stu.get_stu_feeds())
-    # pprint(stu.get_stu_grades())
-    # pprint(stu.get_stu_timetable(detail=True))
-    # pprint(stu.get_class_info(kcdm='0532082B', jxbh='0001', xqdm='027'))
-    # pprint(stu.change_password(stu.password, '1234567', '1234567'))
-    # pprint(stu.set_telephone('1234567890'))
-    # pprint(stu.get_lesson_classes('9900037X', detail=True))
-    # pprint(stu.get_selected_lessons())
-    # optional_lessons = stu.get_optional_lessons(kclx='x')
-    # pprint(optional_lessons)
-    # pprint(stu.select_lesson('1510212X'))
-    # pprint(stu.delete_lesson('1510212X'))
-    # with open('optional_lessons.json', 'wb') as fp:
-    #     json.dump(optional_lessons, fp, ensure_ascii=False, indent=4)
-    pprint(stu.get_class_info('026', '0400073B', '0001'))
-    # pprint(stu.get_lesson_detail(xqdm='026', kcdm='0532082B', kcmc=None))
-    # pprint(stu.get_lesson_detail(xqdm='026', kcdm=None, kcmc='电磁场与电磁波'))
-    # pprint(stu.get_code())
-    # pprint(stu.get_teaching_plan(xqdm='021', kclxdm='1', ccjbyxzy='0120123111'))

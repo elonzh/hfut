@@ -153,8 +153,8 @@ coverage.xml
 *,cover
 
 # Translations
-/class_info.html
-/optional_lessons.json
+/hfut_stu_lib/class_info.html
+/func_factory.py
 *.mo
 *.pot
 
