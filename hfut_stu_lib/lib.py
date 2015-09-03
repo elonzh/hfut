@@ -6,16 +6,17 @@ import re
 import requests
 
 from bs4 import SoupStrainer, BeautifulSoup
+from hfut_stu_lib.util import unfinished, unstable
 
-from logger import hfut_stu_lib_logger
+from logger import logger
 from core import get_tr_strs
 
 
 def get_point(grade_str):
     """
     根据成绩判断绩点
-    :param grade_str: 一个字符串，因为可能是百分制成绩或等级制成绩
-    :return: 一个成绩绩点，为浮点数
+    :param grade_str: 一个字符串,因为可能是百分制成绩或等级制成绩
+    :return: 一个成绩绩点,为浮点数
     """
     try:
         grade = float(grade_str)
@@ -149,7 +150,7 @@ class StuLib(object):
             # ========== 选课功能相关 ==========
             # 可选课程  GET 第一轮
             'get_optional_lessons': 'student/asp/select_topLeft.asp',
-            # 可选课程  GET 第二，三轮 结果与第一轮一致
+            # 可选课程  GET 第二,三轮 结果与第一轮一致
             # 'get_optional_lessons': 'student/asp/select_topLeft_f3.asp',
 
             # 教学班级 GET 无需登录
@@ -159,7 +160,7 @@ class StuLib(object):
 
             # 已选课程 GET
             'get_selected_lessons': 'student/asp/select_down_f3.asp',
-            # 已选课程 第二，三轮 参数与结果与第一轮一致
+            # 已选课程 第二,三轮 参数与结果与第一轮一致
             # 'get_selected_lessons': 'student/asp/select_downRight.asp',
 
             # 提交选课 POST
@@ -168,7 +169,7 @@ class StuLib(object):
         }
 
         url = urlparse.urljoin(self.HOST_URL, urls[func_name])
-        hfut_stu_lib_logger.info('获得 {} 的url:{}'.format(func_name, url))
+        logger.info('获得 {} 的url:{}'.format(func_name, url))
         return url
 
     def get_code(self):
@@ -203,7 +204,7 @@ class StuLib(object):
         assert len(key_lines) == len(value_lines) - 2
 
         stu_info = {}
-        # 解析前面的两行, 将第一行合并到第二行后面，因为第一行最后一列为头像
+        # 解析前面的两行, 将第一行合并到第二行后面,因为第一行最后一列为头像
         value_lines[1].extend(value_lines[0])
         kvs = []
         for cell in value_lines[1][:-1]:
@@ -237,6 +238,7 @@ class StuLib(object):
             grades.append(grade)
         return grades
 
+    @unstable
     def get_stu_timetable(self, detail=False):
         session = self.session
         url = self.get_url('get_stu_timetable')
@@ -332,6 +334,7 @@ class StuLib(object):
                 teacher_info[v[i]] = v[i + 1]
         return teacher_info
 
+    @unfinished
     def get_class_students(self, xqdm, kcdm, jxbh):
         """
         教学班查询
@@ -339,6 +342,7 @@ class StuLib(object):
         :param kcdm: 课程代码
         :param jxbh: 教学班号
         """
+        # todo: 狗日的网页代码写错了无法正确解析标签!
         session = requests.Session()
         url = self.get_url('get_class_students')
         params = {'xqdm': xqdm,
@@ -347,6 +351,11 @@ class StuLib(object):
         page = session.get(url, params=params).text
         ss = SoupStrainer('table', width='500')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
+        if unicode(bs) == '':
+            bs = BeautifulSoup(page, 'html.parser')
+            msg = bs.select_one('font[color="red"] center').string.strip()
+            logger.warning(','.join([msg, '请检查你的参数是否合理']))
+            return None
         trs = bs.find_all('tr')
 
         class_detail = {}
@@ -357,7 +366,6 @@ class StuLib(object):
         # 二逼教务系统将 <tr> 标签写成了 <td> , 只好直接访问兄弟节点取得这个值
         class_name = bs.table.tbody.tr.next_sibling.next_sibling.text.strip()
         class_detail['班级名称'] = class_name
-        # todo: Test failed ! IndexError: list index out of range
         keys = tuple(trs[1].stripped_strings)
         value_list = [tr.stripped_strings for tr in trs[2:]]
         stus = []
@@ -388,7 +396,7 @@ class StuLib(object):
         assert len(key_list) == 3
         # 有六行, 前三行与 key_list 对应, 后四行是单行属性, 键与值在同一行
         trs = bs.find_all('tr', bgcolor='#D6D3CE')
-        # 最后的 备注， 禁选范围 两行外面包裹了一个 'tr' bgcolor='#D6D3CE' 时间地点 ......
+        # 最后的 备注, 禁选范围 两行外面包裹了一个 'tr' bgcolor='#D6D3CE' 时间地点 ......
         tr4 = trs[4]
         special_kv = tuple(tr4.stripped_strings)[:2]
         trs.remove(tr4)
@@ -404,6 +412,7 @@ class StuLib(object):
         class_info.update((special_kv,))
         return class_info
 
+    @unfinished
     def get_lesson_detail(self, xqdm, kcdm=None, kcmc=None):
         """
         课程查询
@@ -411,7 +420,7 @@ class StuLib(object):
         :param kcdm: 课程代码
         :param kcmc: 课程名称
         """
-        # todo:完成课程查询， 使用 kcdm 无法查询成功
+        # todo:完成课程查询, 使用 kcdm 无法查询成功
         if kcdm is None and kcmc is None:
             raise ValueError('kcdm 和 kcdm 参数必须至少存在一个')
         session = requests.Session()
@@ -426,7 +435,7 @@ class StuLib(object):
         """
         计划查询
         :param xqdm: 学期代码
-        :param kclxdm: 课程类型代码 必修为 1， 任选为 3
+        :param kclxdm: 课程类型代码 必修为 1, 任选为 3
         :param ccjbyxzy: 专业
         """
         session = requests.Session()
@@ -476,7 +485,7 @@ class StuLib(object):
             self.password = newpwd
             return True
         else:
-            hfut_stu_lib_logger.warning('密码修改失败\noldpwd: {:s}\nnewpwd: {:s}\nnew2pwd: {:s}\ntext: {:s}'.format(
+            logger.warning('密码修改失败\noldpwd: {:s}\nnewpwd: {:s}\nnew2pwd: {:s}\ntext: {:s}'.format(
                 oldpwd, newpwd, new2pwd, res
             ))
             return False
@@ -524,7 +533,7 @@ class StuLib(object):
                 lessons.append(lesson)
             return lessons
         else:
-            raise ValueError('kclx 参数不正确！')
+            raise ValueError('kclx 参数不正确!')
 
     def get_selected_lessons(self):
         """
@@ -562,7 +571,7 @@ class StuLib(object):
         :param kcdm:课程代码
         """
         if self.is_lesson_selected(kcdm):
-            hfut_stu_lib_logger.warning('你已经选了课程 {:s}'.format(kcdm))
+            logger.warning('你已经选了课程 {:s}'.format(kcdm))
         session = requests.Session()
         params = {'kcdm': kcdm}
         url = self.get_url('get_lesson_classes')
@@ -589,77 +598,89 @@ class StuLib(object):
             lesson_classes.append(klass)
         return lesson_classes
 
-    def select_lesson(self, kcdm, jxbh=None):
-        '''
+    @unfinished
+    def select_lesson(self, kvs):
+        """
         提交选课
-        :param kcdm:课程代码
-        :param jxbh:教学班号
+        :param kvs:课程代码
         :return:选课结果
-        '''
-        session = self.session
-        # kclxmc 课程类型名称
-        kcdms = []
-        jxbhs = []
+        """
+        # 参数中的课程代码, 用于检查参数
+        kcdms = set()
+        # 要提交的 kcdm 数据
+        kcdms_data = []
+        # 要提交的 jxbh 数据
+        jxbhs_data = []
+        # 函数返回的结果
+        results = []
+        # 参数处理
+        for kv in kvs:
+            kcdm = kv['kcdm']
+            jxbhs = kv['jxbhs']
+            if kcdm not in kcdms:
+                if self.is_lesson_selected(kcdm):
+                    logger.warning('课程 {:s} 你已经选过了'.format(kcdm))
+                    kcdms.add(kcdm)
+                    result = dict(kcdm=kcdm, jxbh=None, selected=False)
+                    results.append(result)
+                else:
+                    if not jxbhs:
+                        teaching_classes = self.get_lesson_classes(kcdm)
+                        for klass in teaching_classes:
+                            kcdms_data.append(kcdm)
+                            jxbhs_data.append(klass['教学班号'])
+                    else:
+                        for jxbh in jxbhs:
+                            kcdms_data.append(kcdm)
+                            jxbhs_data.append(jxbh)
+            else:
+                raise ValueError('你有多个 kcdm={:s} 的字典, 请检查你的参数'.format(kcdm))
+
         # 必须添加已选课程
         selected_lessons = self.get_selected_lessons()
-        if selected_lessons is not None:
-            for lesson in selected_lessons:
-                kcdms.append(lesson['课程代码'])
-                jxbhs.append(lesson['教学班号'])
-        # 选择多个课程
-        if isinstance(kcdm, (list, tuple, set)):
-            # 去重
-            kcdm = set(kcdm)
-            for id in kcdm:
-                teaching_classes = self.get_lesson_classes(id)
-                if teaching_classes is not None:
-                    for class_ in teaching_classes:
-                        kcdms.append(id)
-                        jxbhs.append(class_['教学班号'])
-        elif isinstance(kcdm, (unicode, str)):
-            # 任意班级匹配
-            if jxbh is None:
-                teaching_classes = self.get_lesson_classes(kcdm)
-                if teaching_classes is not None:
-                    for class_ in teaching_classes:
-                        kcdms.append(kcdm)
-                        jxbhs.append(class_['教学班号'])
-            else:
-                kcdms.append(kcdm)
-                jxbhs.append(jxbh)
-        else:
-            raise TypeError('kcdm 为一个序列或者字符串而不是 {:s}'.format(type(kcdm)))
-        data = {'xh': self.stu_id, 'kcdm': kcdms, 'jxbh': jxbhs}
+        for lesson in selected_lessons:
+            kcdms_data.append(lesson['课程代码'])
+            jxbhs_data.append(lesson['教学班号'])
+
+        session = self.session
+        data = {'xh': self.stu_id, 'kcdm': kcdms_data, 'jxbh': jxbhs_data}
         r = session.post(self.get_url('select_lesson'), data=data, allow_redirects=False)
 
         if r.status_code == 302:
-            print '请勿同时登陆两个账号'
+            msg = '提交选课失败, 可能是身份验证过期或选课系统已关闭'
+            logger.error(msg)
+            raise ValueError(msg)
         else:
+            page = r.text.encode('utf-8', 'ignore')
             ss = SoupStrainer('body')
-            bs = BeautifulSoup(r.text, parse_only=ss)
+            bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
+
             fp = open('result.html', 'wb')
             fp.write(r.text)
             fp.close()
+
             strs = list(bs.stripped_strings)[0:-3]
-            results = []
-            # todo: 只输出了结果，没有反馈到缓存中
-            print '=====选课结果如下====='
-            print '新提交课程数：', len(strs)
+            # ======================================== todo: 尚未完成!
+            for str in strs:
+                print str
             for i in xrange(0, len(strs), 2):
                 result = {}
                 if strs[i] == 'Microsoft OLE DB Provider for ODBC Drivers':
                     result['message'] = ''.join([strs[i], strs[i + 1]])
                     print result['message']
                 else:
-                    # TODO:结果处理方式有缺陷
-                    result['message'] = strs[i]
+                    if strs[i] == '容量已满,请选择其他教学班!':
+                        result['selected'] = False
+                    elif strs[i]:
+                        print strs[i]
                     s = strs[i + 1].split()
-                    result['id'] = s[1]
-                    result['class'] = s[3]
+                    result['kcdm'] = s[1]
+                    result['jxbh'] = s[3]
+                    print result['kcdm'], result['jxbh'], result['selected']
                     results.append(result)
-                    print result['message'], result['id'], result['class']
-            return results
+                    # ==================================================
 
+    @unstable
     def delete_lesson(self, kcdm):
         session = self.session
         if self.is_lesson_selected(kcdm):
@@ -682,7 +703,7 @@ class StuLib(object):
             else:
                 new_num = len(self.get_selected_lessons())
                 if new_num == old_num - 1 and not self.is_lesson_selected(kcdm):
-                    print kcdm, '删除成功！'
+                    print kcdm, '删除成功!'
                 else:
                     print new_num, old_num
         else:

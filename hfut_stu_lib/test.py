@@ -1,20 +1,20 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals
+import logging
 
 import unittest
 
-from pprint import pprint
-
 from lib import StuLib
-from logger import hfut_stu_lib_logger
+from logger import logger
 
 try:
     import uniout
 except ImportError:
-    hfut_stu_lib_logger.info('安装 uniout 库能够直接显示 unicode 内容')
+    logger.info('安装 uniout 库能够直接显示 unicode 内容')
 
 
 class StuLibTest(unittest.TestCase):
+    logger.setLevel(logging.DEBUG)
     stu = StuLib(2013217413, '1234567')
     # stu = StuLib(2013217399, '8280613')
     # stu = StuLib(2013217427, '217427')
@@ -66,14 +66,15 @@ class StuLibTest(unittest.TestCase):
         self.assertEqual(res.keys(), keys)
 
     def test_get_class_students(self):
-        # todo: 待补充 get_class_students 测试用例
-        # res = self.stu.get_class_students('026', '0400073B', '0001')
-        # pprint(res)
+        # todo: get_class_students 未完成, 待补充测试用例
         pass
+        # res = self.stu.get_class_students('028', '0400073B', '0001')
+        # self.assertEqual(res, None)
+        # res = self.stu.get_class_students('026', '0400073B', '0001')
 
     def test_get_class_info(self):
-        keys = ['时间地点', '开课单位', '禁选范围', '考核类型', '性别限制', '教学班号', '课程名称', '优选范围', '备 注', '学分', '课程类型', '校区',
-                '选中人数', '起止周']
+        keys = ['时间地点', '开课单位', '禁选范围', '考核类型', '性别限制', '教学班号', '课程名称', '优选范围', '备 注',
+                '学分', '课程类型', '校区', '选中人数', '起止周']
         res = self.stu.get_class_info('026', '0400073B', '0001')
         self.assertEqual(res.keys(), keys)
 
