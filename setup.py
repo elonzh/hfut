@@ -2,13 +2,14 @@
 from __future__ import unicode_literals
 
 from setuptools import setup, find_packages
+import hfut_stu_lib
 
 with open('README.md') as fp:
     long_description = fp.read()
 
 setup(
     name='hfut_stu_lib',
-    version='0.0.1',
+    version=hfut_stu_lib.__version__,
     keywords=('hfut', 'spider', 'edu', 'student', 'interface'),
     description='Provided full-featured interfaces for the educational administration system of HeFei University of Technology.',
     long_description=long_description,
@@ -21,5 +22,5 @@ setup(
 
     packages=find_packages(),
     platforms='any',
-
+    test_suite='hfut_stu_lib.test'
 )
