@@ -90,7 +90,7 @@ def cal_gpa(grades):
 
 
 class StuLib(object):
-    HOST_URL = 'http://172.18.6.99/'
+    HOST_URL = 'http://222.195.8.201/'
 
     def __init__(self, stu_id, password):
         self.stu_id = stu_id
