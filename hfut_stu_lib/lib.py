@@ -6,10 +6,10 @@ import re
 import requests
 
 from bs4 import SoupStrainer, BeautifulSoup
-from hfut_stu_lib.util import unfinished, unstable
 
 from logger import logger
 from core import get_tr_strs
+from util import unfinished, unstable
 
 
 def get_point(grade_str):
