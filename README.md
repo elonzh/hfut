@@ -17,17 +17,11 @@ Provided full-featured interfaces for the educational administration system of H
     ```
     $ pip install hfut_stu_lib
     ```
-    
-    或
-    
-    ```
-    $ git clone
-    ```
 
 - 使用
 
     ```
     >>> from hfut_stu_lib import StuLib
-    >>> stu = StuLib(2013217413, 'your-password)
+    >>> stu = StuLib(2013217413, 'your-password')
     >>> stu.get_stu_info()
     ```
