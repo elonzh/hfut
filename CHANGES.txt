@@ -1,0 +1,17 @@
+- 20150909 v0.0.4
+    . 统一将返回的课程代码进行大写转换, 避免因学校课程代码大小写的不统一产生不可预料的问题
+    . 重构了 StuLib.select_lesson , 现在支持更好地批量选课以及更好地结果处理过程
+    . 重构了 StuLib.delete_lesson , 现在支持批量删课以及更好地结果处理过程
+
+- 20150903 v0.0.2
+    . 重构了 StuLib.select_lesson 的参数处理过程, 由于第二次选课结束暂时没有完成对提交结果的处理
+    . 添加 Travis IC 持续集成工具
+
+- 20150902 v0.0.1
+    . 修复 StuLib.get_class_info 出错
+    . 添加 教师信息查询（StuLib.get_teacher_info） 功能
+    . 将 StuLib.get_url 的 code 修改为对应的方法名称
+    . 修复 StuLib.change_password 正则匹配不完整的问题
+    . 修复 StuLib.set_telephone 正则匹配不完整的问题
+    . 添加部分单元测试
+    . 调整了包的结构

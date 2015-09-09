@@ -25,3 +25,6 @@ Provided full-featured interfaces for the educational administration system of H
     >>> stu = StuLib(2013217413, 'your-password')
     >>> stu.get_stu_info()
     ```
+
+
+**更新日志请查看** *CHANGES.txt*

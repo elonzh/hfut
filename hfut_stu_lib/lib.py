@@ -11,6 +11,8 @@ from logger import logger
 from core import get_tr_strs
 from util import unfinished, unstable
 
+__all__ = ['StuLib']
+
 
 def get_point(grade_str):
     """
@@ -147,6 +149,9 @@ class StuLib(object):
             # 教师信息 GET 无需登陆
             'get_teacher_info': 'teacher/asp/teacher_info.asp',
 
+            # 查询指定学期课程开课班级 GET
+            # '': 'student/asp/xqkb2_1.asp',
+
             # ========== 选课功能相关 ==========
             # 可选课程  GET 第一轮
             'get_optional_lessons': 'student/asp/select_topLeft.asp',
@@ -235,6 +240,7 @@ class StuLib(object):
         grades = []
         for values in values_list:
             grade = dict(zip(keys, values))
+            grade['课程代码'] = grade['课程代码'].upper()
             grades.append(grade)
         return grades
 
@@ -304,6 +310,7 @@ class StuLib(object):
         feeds = []
         for values in value_list:
             feed = dict(zip(keys, values))
+            feed['课程代码'] = feed['课程代码'].upper()
             feeds.append(feed)
         return feeds
 
@@ -453,6 +460,7 @@ class StuLib(object):
         teaching_plan = []
         for values in value_list:
             plan = dict(zip(keys, values))
+            plan['课程代码'] = plan['课程代码'].upper()
             teaching_plan.append(plan)
         return teaching_plan
 
@@ -525,7 +533,7 @@ class StuLib(object):
             trs = bs.find_all('tr')
             value_list = [tuple(tr.stripped_strings) for tr in trs[:-1]]
             for values in value_list:
-                lesson = {'课程代码': values[0],
+                lesson = {'课程代码': values[0].upper(),
                           '课程名称': values[1],
                           '课程类型': values[2],
                           '开课院系': values[3],
@@ -550,6 +558,7 @@ class StuLib(object):
         value_list = [tr.stripped_strings for tr in bs.find_all('tr', bgcolor='#D6D3CE')]
         for values in value_list:
             lesson = dict(zip(keys, values))
+            lesson['课程代码'] = lesson['课程代码'].upper()
             lessons.append(lesson)
         return lessons
 
@@ -561,7 +570,7 @@ class StuLib(object):
         """
         selected_lessons = self.get_selected_lessons()
         for lesson in selected_lessons:
-            if kcdm == lesson['课程代码']:
+            if kcdm.upper() == lesson['课程代码']:
                 return True
         return False
 
@@ -571,7 +580,7 @@ class StuLib(object):
         :param kcdm:课程代码
         """
         if self.is_lesson_selected(kcdm):
-            logger.warning('你已经选了课程 {:s}'.format(kcdm))
+            logger.warning('你已经选了课程 {:s}, 如果你要选课的话, 请勿选取此课程代码'.format(kcdm))
         session = requests.Session()
         params = {'kcdm': kcdm}
         url = self.get_url('get_lesson_classes')
@@ -598,12 +607,12 @@ class StuLib(object):
             lesson_classes.append(klass)
         return lesson_classes
 
-    @unfinished
+    @unstable
     def select_lesson(self, kvs):
         """
         提交选课
         :param kvs:课程代码
-        :return:选课结果
+        :return:选课结果, 返回选中的课程教学班列表
         """
         # 参数中的课程代码, 用于检查参数
         kcdms = set()
@@ -611,18 +620,14 @@ class StuLib(object):
         kcdms_data = []
         # 要提交的 jxbh 数据
         jxbhs_data = []
-        # 函数返回的结果
-        results = []
         # 参数处理
         for kv in kvs:
-            kcdm = kv['kcdm']
+            kcdm = kv['kcdm'].upper()
             jxbhs = kv['jxbhs']
             if kcdm not in kcdms:
+                kcdms.add(kcdm)
                 if self.is_lesson_selected(kcdm):
                     logger.warning('课程 {:s} 你已经选过了'.format(kcdm))
-                    kcdms.add(kcdm)
-                    result = dict(kcdm=kcdm, jxbh=None, selected=False)
-                    results.append(result)
                 else:
                     if not jxbhs:
                         teaching_classes = self.get_lesson_classes(kcdm)
@@ -651,60 +656,58 @@ class StuLib(object):
             logger.error(msg)
             raise ValueError(msg)
         else:
-            page = r.text.encode('utf-8', 'ignore')
-            ss = SoupStrainer('body')
-            bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
-
-            fp = open('result.html', 'wb')
-            fp.write(r.text)
-            fp.close()
-
-            strs = list(bs.stripped_strings)[0:-3]
-            # ======================================== todo: 尚未完成!
-            for str in strs:
-                print str
-            for i in xrange(0, len(strs), 2):
-                result = {}
-                if strs[i] == 'Microsoft OLE DB Provider for ODBC Drivers':
-                    result['message'] = ''.join([strs[i], strs[i + 1]])
-                    print result['message']
-                else:
-                    if strs[i] == '容量已满,请选择其他教学班!':
-                        result['selected'] = False
-                    elif strs[i]:
-                        print strs[i]
-                    s = strs[i + 1].split()
-                    result['kcdm'] = s[1]
-                    result['jxbh'] = s[3]
-                    print result['kcdm'], result['jxbh'], result['selected']
+            page = r.text
+            # 当选择同意课程的多个教学班时, 若已选中某个教学班, 再选择其他班数据库会出错,
+            # 其他一些不可预料的原因也会导致数据库出错
+            p = re.compile(r'(成功提交选课数据|容量已满,请选择其他教学班).+?'
+                           r'课程代码：\s*([\dbBxX]+)[\s;&nbsp]*教学班号：\s*(\d{4})', re.DOTALL)
+            res = p.findall(page)
+            if not res:
+                logger.warning('正则没有匹配到结果，可能出现了一些状况\n{:s}'.format(page))
+                return None
+            results = []
+            for g in res:
+                logger.info(' '.join(g))
+                msg, kcdm, jxbh = g
+                if msg == '成功提交选课数据':
+                    result = {'课程代码': kcdm.upper(), '教学班号': jxbh}
                     results.append(result)
-                    # ==================================================
+            return results
 
     @unstable
-    def delete_lesson(self, kcdm):
+    def delete_lesson(self, kcdms):
+        # 对参数进行预处理
+        kcdms = set(kcdms)
+        kcdms = map(lambda v: v.upper(), kcdms)
+
+        kcdms_data = []
+        jxbhs_data = []
+        selected_lessons = self.get_selected_lessons()
+        for lesson in selected_lessons:
+            if lesson['课程代码'] not in kcdms:
+                kcdms_data.append(lesson['课程代码'])
+                jxbhs_data.append(lesson['教学班号'])
+
         session = self.session
-        if self.is_lesson_selected(kcdm):
-            kcdms = []
-            jxbhs = []
-            # 必须添加已选课程
-            selected_lessons = self.get_selected_lessons()
-            old_num = len(selected_lessons)
-            if selected_lessons is not None:
-                for lesson in selected_lessons:
-                    if kcdm != lesson['课程代码']:
-                        kcdms.append(lesson['课程代码'])
-                        jxbhs.append(lesson['教学班号'])
-            # 添加所选课程
-            data = {'xh': self.stu_id, 'kcdm': kcdms, 'jxbh': jxbhs}
-            r = session.post(self.get_url('select_lesson'), data=data,
-                             allow_redirects=False)
-            if r.status_code == 302:
-                print '请勿同时登陆两个账号'
-            else:
-                new_num = len(self.get_selected_lessons())
-                if new_num == old_num - 1 and not self.is_lesson_selected(kcdm):
-                    print kcdm, '删除成功!'
-                else:
-                    print new_num, old_num
+        data = {'xh': self.stu_id, 'kcdm': kcdms_data, 'jxbh': jxbhs_data}
+        r = session.post(self.get_url('select_lesson'), data=data, allow_redirects=False)
+        if r.status_code == 302:
+            msg = '课程删除失败, 可能是身份验证过期或选课系统已关闭'
+            logger.error(msg)
+            raise ValueError(msg)
         else:
-            print kcdm, '不是已选课程'
+            page = r.text
+            # 当选择同意课程的多个教学班时, 若已选中某个教学班, 再选择其他班数据库会出错,
+            # 其他一些不可预料的原因也会导致数据库出错
+            p = re.compile(r'(已成功删除下列选课数据).+?课程代码：\s*([\dbBxX]+)[\s;&nbsp]*教学班号：\s*(\d{4})', re.DOTALL)
+            res = p.findall(page)
+            if not res:
+                logger.warning('正则没有匹配到结果，可能出现了一些状况\n{:s}'.format(page))
+                return None
+            results = []
+            for g in res:
+                logger.info(' '.join(g))
+                msg, kcdm, jxbh = g
+                result = {'课程代码': kcdm.upper(), '教学班号': jxbh}
+                results.append(result)
+            return results
