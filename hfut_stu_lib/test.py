@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals
+
 import logging
 
 import unittest
@@ -67,10 +68,15 @@ class StuLibTest(unittest.TestCase):
 
     def test_get_class_students(self):
         # todo: get_class_students 未完成, 待补充测试用例
-        pass
-        # res = self.stu.get_class_students('028', '0400073B', '0001')
-        # self.assertEqual(res, None)
-        # res = self.stu.get_class_students('026', '0400073B', '0001')
+        keys = ['学期', '班级名称', '学生']
+        keys.sort()
+        res = self.stu.get_class_students('028', '0400073B', '0001')
+        self.assertIsNone(res)
+        res = self.stu.get_class_students('026', '0400073B', '0001')
+        res_keys = res.keys()
+        res_keys.sort()
+        self.assertSequenceEqual(res_keys, keys)
+        self.assertEqual(len(res['学生']), 45)
 
     def test_get_class_info(self):
         keys = ['时间地点', '开课单位', '禁选范围', '考核类型', '性别限制', '教学班号', '课程名称', '优选范围', '备 注',

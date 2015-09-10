@@ -1,6 +1,5 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals
-
 import urlparse
 import re
 import requests
@@ -9,86 +8,9 @@ from bs4 import SoupStrainer, BeautifulSoup
 
 from logger import logger
 from core import get_tr_strs
-from util import unfinished, unstable
+from core import unfinished, unstable
 
 __all__ = ['StuLib']
-
-
-def get_point(grade_str):
-    """
-    根据成绩判断绩点
-    :param grade_str: 一个字符串,因为可能是百分制成绩或等级制成绩
-    :return: 一个成绩绩点,为浮点数
-    """
-    try:
-        grade = float(grade_str)
-        assert 0 <= grade <= 100
-        if 95 <= grade <= 100:
-            return 4.3
-        elif 90 <= grade < 95:
-            return 4.0
-        elif 85 <= grade < 90:
-            return 3.7
-        elif 82 <= grade < 85:
-            return 3.3
-        elif 78 <= grade < 82:
-            return 3.0
-        elif 75 <= grade < 78:
-            return 2.7
-        elif 72 <= grade < 75:
-            return 2.3
-        elif 68 <= grade < 72:
-            return 2.0
-        elif 66 <= grade < 68:
-            return 1.7
-        elif 64 <= grade < 66:
-            return 1.3
-        elif 60 <= grade < 64:
-            return 1.0
-        else:
-            return 0.0
-    except ValueError:
-        if grade_str == '优':
-            return 3.9
-        elif grade_str == '良':
-            return 3.0
-        elif grade_str == '中':
-            return 2.0
-        elif grade_str == '及格':
-            return 1.2
-        elif grade_str == '不及格':
-            return 0.0
-        else:
-            raise ValueError('{:s} 不是有效的成绩'.format(grade_str))
-
-
-def cal_gpa(grades):
-    """
-    根据成绩数组计算课程平均绩点和 gpa
-    :param grades: parse_grades(text) 返回的成绩数组
-    :return: 包含了课程平均绩点和 gpa 的元组
-    """
-    # 课程总数
-    lessons_sum = len(grades)
-    # 课程绩点和
-    points_sum = 0
-    # 学分和
-    credit_sum = 0
-    # 课程学分 x 课程绩点之和
-    gpa_points_sum = 0
-    for grade in grades:
-        sec_test_grade = grade.get('补考成绩')
-        if sec_test_grade:
-            point = get_point(sec_test_grade)
-        else:
-            point = get_point(grade['成绩'])
-        credit = float(grade['学分'])
-        points_sum += point
-        credit_sum += credit
-        gpa_points_sum += credit * point
-    ave_point = points_sum / lessons_sum
-    gpa = gpa_points_sum / credit_sum
-    return ave_point, gpa
 
 
 class StuLib(object):
@@ -174,7 +96,7 @@ class StuLib(object):
         }
 
         url = urlparse.urljoin(self.HOST_URL, urls[func_name])
-        logger.info('获得 {} 的url:{}'.format(func_name, url))
+        logger.debug('获得 {} 的url:{}'.format(func_name, url))
         return url
 
     def get_code(self):
@@ -183,7 +105,7 @@ class StuLib(object):
         """
         session = self.session
         url = self.get_url('get_code')
-        page = session.get(url).text
+        page = session.get(url).content
 
         ss = SoupStrainer('select')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
@@ -197,7 +119,7 @@ class StuLib(object):
     def get_stu_info(self):
         session = self.session
         url = self.get_url('get_stu_info')
-        page = session.get(url).text
+        page = session.get(url).content
         ss = SoupStrainer('table')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
 
@@ -230,7 +152,7 @@ class StuLib(object):
     def get_stu_grades(self):
         session = self.session
         url = self.get_url('get_stu_grades')
-        page = session.get(url).text
+        page = session.get(url).content
         ss = SoupStrainer('table', width='582')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
         trs = bs.find_all('tr')
@@ -248,7 +170,7 @@ class StuLib(object):
     def get_stu_timetable(self, detail=False):
         session = self.session
         url = self.get_url('get_stu_timetable')
-        page = session.get(url).text
+        page = session.get(url).content
         ss = SoupStrainer('table', width='840')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
         trs = bs.find_all('tr')
@@ -300,7 +222,7 @@ class StuLib(object):
     def get_stu_feeds(self):
         session = self.session
         url = self.get_url('get_stu_feeds')
-        page = session.get(url).text
+        page = session.get(url).content
         ss = SoupStrainer('table', bgcolor='#000000')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
 
@@ -322,7 +244,7 @@ class StuLib(object):
         session = requests.Session()
         url = self.get_url('get_teacher_info')
         params = {'jsh': jsh}
-        page = session.get(url, params=params).text
+        page = session.get(url, params=params).content
         ss = SoupStrainer('table')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
 
@@ -349,38 +271,31 @@ class StuLib(object):
         :param kcdm: 课程代码
         :param jxbh: 教学班号
         """
-        # todo: 狗日的网页代码写错了无法正确解析标签!
         session = requests.Session()
         url = self.get_url('get_class_students')
         params = {'xqdm': xqdm,
                   'kcdm': kcdm,
                   'jxbh': jxbh}
         page = session.get(url, params=params).text
-        ss = SoupStrainer('table', width='500')
-        bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
-        if unicode(bs) == '':
-            bs = BeautifulSoup(page, 'html.parser')
-            msg = bs.select_one('font[color="red"] center').string.strip()
-            logger.warning(','.join([msg, '请检查你的参数是否合理']))
+        # 狗日的网页代码写错了无法正确解析标签!
+        term_p = r'\d{4}-\d{4}学年第(一|二)学期'
+        term = re.search(term_p, page)
+        class_name_p = r'[\u4e00-\u9fa5\w-]+\d{4}班'
+        class_name = re.search(class_name_p, page)
+        # 虽然 \S 能解决匹配失败中文的问题, 但是最后的结果还是乱码的
+        # todo: 需要解决 requests 不能对 GBK 转 UTF8 无损转换的问题
+        stu_p = r'>\s*?(\d{1,3})\s*?</.*?>\s*?(\d{10})\s*?</.*?>\s*?([\u4e00-\u9fa5*]+|\S+)\s*?</'
+        stus = re.findall(stu_p, page, re.DOTALL)
+        if term and class_name and stus:
+            stus = map(lambda v: {'序号': v[0], '学号': v[1], '姓名': v[2]}, stus)
+            return {'学期': term.group(), '班级名称': class_name.group(), '学生': stus}
+        elif page.find('无此教学班') != -1:
+            logger.warning('无此教学班, 请检查你的参数')
             return None
-        trs = bs.find_all('tr')
-
-        class_detail = {}
-        # 学期
-        term = trs[0].text.strip()
-        class_detail['学期'] = term
-        # 班级名称
-        # 二逼教务系统将 <tr> 标签写成了 <td> , 只好直接访问兄弟节点取得这个值
-        class_name = bs.table.tbody.tr.next_sibling.next_sibling.text.strip()
-        class_detail['班级名称'] = class_name
-        keys = tuple(trs[1].stripped_strings)
-        value_list = [tr.stripped_strings for tr in trs[2:]]
-        stus = []
-        for values in value_list:
-            stu = dict(zip(keys, values))
-            stus.append(stu)
-        class_detail['学生'] = stus
-        return class_detail
+        else:
+            msg = '\n'.join(['没有匹配到信息, 可能出现了一些问题', page])
+            logger.error(msg)
+            raise ValueError(msg)
 
     def get_class_info(self, xqdm, kcdm, jxbh):
         """
@@ -395,7 +310,7 @@ class StuLib(object):
                   'jxbh': jxbh}
         session = requests.Session()
 
-        page = session.get(url, params=params).text
+        page = session.get(url, params=params).content
         ss = SoupStrainer('table', width='600')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
         # 有三行
@@ -435,7 +350,7 @@ class StuLib(object):
         data = {'xqdm': xqdm,
                 'kcdm': kcdm,
                 'kcmc': kcmc}
-        page = session.post(url, data=data).text
+        page = session.post(url, data=data).content
         print page
 
     def get_teaching_plan(self, xqdm, kclxdm, ccjbyxzy):
@@ -451,7 +366,7 @@ class StuLib(object):
         data = {'xqdm': xqdm,
                 'kclxdm': kclxdm,
                 'ccjbyxzy': ccjbyxzy}
-        page = session.post(url, data=data).text
+        page = session.post(url, data=data).content
         ss = SoupStrainer('table', width='650')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
         trs = bs.find_all('tr')
@@ -485,7 +400,7 @@ class StuLib(object):
         data = {'oldpwd': oldpwd,
                 'newpwd': newpwd,
                 'new2pwd': new2pwd}
-        page = session.post(url, data=data).text
+        page = session.post(url, data=data).content
         ss = SoupStrainer('table', width='580', border='0', cellspacing='1', bgcolor='#000000')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
         res = bs.text.strip()
@@ -511,7 +426,7 @@ class StuLib(object):
         session = self.session
         url = self.get_url('set_telephone')
         data = {'tel': tel}
-        page = session.post(url, data=data).text
+        page = session.post(url, data=data).content
         ss = SoupStrainer('input', attrs={'name': 'tel'})
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
         return bs.input['value'] == tel
@@ -526,7 +441,7 @@ class StuLib(object):
             session = self.session
             url = self.get_url('get_optional_lessons')
             params = {'kclx': kclx}
-            page = session.get(url, params=params, allow_redirects=False).text
+            page = session.get(url, params=params, allow_redirects=False).content
             ss = SoupStrainer('table', id='KCTable')
             bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
             lessons = []
@@ -549,7 +464,7 @@ class StuLib(object):
         """
         session = self.session
         url = self.get_url('get_selected_lessons')
-        page = session.get(url, allow_redirects=False).text
+        page = session.get(url, allow_redirects=False).content
         ss = SoupStrainer('table', id='TableXKJG')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
 
@@ -586,7 +501,7 @@ class StuLib(object):
         url = self.get_url('get_lesson_classes')
         r = session.get(url, params=params, allow_redirects=False)
         ss = SoupStrainer('table', id='JXBTable')
-        bs = BeautifulSoup(r.text, 'html.parser', parse_only=ss)
+        bs = BeautifulSoup(r.content, 'html.parser', parse_only=ss)
         trs = bs.find_all('tr')
 
         lesson_classes = []
@@ -607,7 +522,6 @@ class StuLib(object):
             lesson_classes.append(klass)
         return lesson_classes
 
-    @unstable
     def select_lesson(self, kvs):
         """
         提交选课
@@ -674,7 +588,6 @@ class StuLib(object):
                     results.append(result)
             return results
 
-    @unstable
     def delete_lesson(self, kcdms):
         # 对参数进行预处理
         kcdms = set(kcdms)

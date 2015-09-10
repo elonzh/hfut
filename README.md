@@ -27,4 +27,4 @@ Provided full-featured interfaces for the educational administration system of H
     ```
 
 
-**更新日志请查看** *CHANGES.txt*
+**更新日志请查看** *CHANGES.md*

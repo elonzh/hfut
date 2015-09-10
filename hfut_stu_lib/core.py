@@ -1,6 +1,19 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals
 
+from logger import logger
+
+
+def unfinished(func):
+    msg = '{:s} 尚未完成, 请勿尝试使用'.format(func.__name__)
+    logger.error(msg)
+    return func
+
+
+def unstable(func):
+    logger.warning('{:s} 功能尚不稳定, 建议使用时验证结果的正确性'.format(func.__name__))
+    return func
+
 
 def get_tr_strs(trs):
     """
