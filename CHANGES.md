@@ -1,3 +1,7 @@
+- 20150911 v0.1.0
+    1. 解决 requests 不能对 GBK 转 UTF8 无损转换的问题
+    2. 添加 StuLib.catch_response , 抽象了响应的获取, 提升了代码的可维护性
+
 - 20150910 v0.0.4
     1. 修复了 StuLib.get_class_student 中由于教务网页代码严重的错误导致页面无法解析而不可用的问题
     2. 添加了 StuLib.get_class_student 的测试用例

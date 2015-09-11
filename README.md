@@ -27,4 +27,4 @@ Provided full-featured interfaces for the educational administration system of H
     ```
 
 
-**更新日志请查看** *CHANGES.md*
+**更新日志请查看** *[CHANGES.md](https://github.com/evilerliang/hfut-stu-lib/blob/master/CHANGES.md)*

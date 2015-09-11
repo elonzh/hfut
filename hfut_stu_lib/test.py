@@ -67,7 +67,6 @@ class StuLibTest(unittest.TestCase):
         self.assertEqual(res.keys(), keys)
 
     def test_get_class_students(self):
-        # todo: get_class_students 未完成, 待补充测试用例
         keys = ['学期', '班级名称', '学生']
         keys.sort()
         res = self.stu.get_class_students('028', '0400073B', '0001')
@@ -84,9 +83,9 @@ class StuLibTest(unittest.TestCase):
         res = self.stu.get_class_info('026', '0400073B', '0001')
         self.assertEqual(res.keys(), keys)
 
-    def test_get_lesson_detail(self):
-        # todo: get_lesson_detail 未完成, 待补充测试用例
-        self.assertRaises(ValueError, self.stu.get_lesson_detail, '026')
+    def test_search_lessons(self):
+        # todo: search_lessons 未完成, 待补充测试用例
+        self.assertRaises(ValueError, self.stu.search_lessons, '026')
         # res = self.stu.get_lesson_detail('026', '0400073B')
         # pprint(res)
 

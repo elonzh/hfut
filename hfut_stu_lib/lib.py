@@ -15,6 +15,7 @@ __all__ = ['StuLib']
 
 class StuLib(object):
     HOST_URL = 'http://222.195.8.201/'
+    SITE_ENCODING = 'gbk'
 
     def __init__(self, stu_id, password):
         self.stu_id = stu_id
@@ -22,14 +23,14 @@ class StuLib(object):
         self.session = self.login()
 
     def login(self):
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0}"}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0}'}
         login_url = self.get_url('login')
         data = {"UserStyle": 'student', "user": self.stu_id, "password": self.password}
         session = requests.Session()
         session.headers = headers
-        r = session.post(login_url, data=data, allow_redirects=False)
-        if r.status_code != 302:
-            raise ValueError('登陆失败, 请检查你的学号和密码')
+        res = session.post(login_url, data=data, allow_redirects=False)
+        if res.status_code != 302:
+            raise ValueError('\n'.join(['登陆失败, 请检查你的学号和密码', res.request.body]))
         return session
 
     def get_url(self, func_name):
@@ -64,8 +65,8 @@ class StuLib(object):
             'get_class_students': 'student/asp/Jxbmdcx_1.asp',
             # 教学班详情 GET 无需登陆 选课时用得上
             'get_class_info': 'student/asp/xqkb1_1.asp',
-            # 课程查询 POST
-            'get_lesson_detail': 'student/asp/xqkb1.asp',
+            # 课程查询 POST 无需登录
+            'search_lessons': 'student/asp/xqkb1.asp',
             # 计划查询 POST 无需登陆
             'get_teaching_plan': 'student/asp/xqkb2.asp',
             # 教师信息 GET 无需登陆
@@ -99,13 +100,31 @@ class StuLib(object):
         logger.debug('获得 {} 的url:{}'.format(func_name, url))
         return url
 
+    def catch_response(self, func_name, method='get', need_login=False, **kwargs):
+        if need_login:
+            session = self.session
+        else:
+            session = requests.Session()
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0}'}
+        session.headers = headers
+        url = self.get_url(func_name)
+        func = getattr(session, method.lower())
+
+        # if kwargs.get('data'):
+        #     kwargs['data'] = encode_params(kwargs['data'], encoding=self.SITE_ENCODING)
+        #     print kwargs['data'], type(kwargs['data'])
+        if not func:
+            raise ValueError(' '.join([method, '不是一个正确的请求方式']))
+        res = func(url, **kwargs)
+        res.encoding = self.SITE_ENCODING
+        return res
+
     def get_code(self):
         """
         获取专业, 学期的代码和名称
         """
-        session = self.session
-        url = self.get_url('get_code')
-        page = session.get(url).content
+        res = self.catch_response(self.get_code.func_name, need_login=True)
+        page = res.text
 
         ss = SoupStrainer('select')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
@@ -117,9 +136,8 @@ class StuLib(object):
         return result
 
     def get_stu_info(self):
-        session = self.session
-        url = self.get_url('get_stu_info')
-        page = session.get(url).content
+        res = self.catch_response(self.get_stu_info.func_name, need_login=True)
+        page = res.text
         ss = SoupStrainer('table')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
 
@@ -150,9 +168,8 @@ class StuLib(object):
         return stu_info
 
     def get_stu_grades(self):
-        session = self.session
-        url = self.get_url('get_stu_grades')
-        page = session.get(url).content
+        res = self.catch_response(self.get_stu_grades.func_name, need_login=True)
+        page = res.text
         ss = SoupStrainer('table', width='582')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
         trs = bs.find_all('tr')
@@ -168,9 +185,8 @@ class StuLib(object):
 
     @unstable
     def get_stu_timetable(self, detail=False):
-        session = self.session
-        url = self.get_url('get_stu_timetable')
-        page = session.get(url).content
+        res = self.catch_response(self.get_stu_timetable.func_name, need_login=True)
+        page = res.text
         ss = SoupStrainer('table', width='840')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
         trs = bs.find_all('tr')
@@ -220,9 +236,8 @@ class StuLib(object):
         return timetable
 
     def get_stu_feeds(self):
-        session = self.session
-        url = self.get_url('get_stu_feeds')
-        page = session.get(url).content
+        res = self.catch_response(self.get_stu_feeds.func_name, need_login=True)
+        page = res.text
         ss = SoupStrainer('table', bgcolor='#000000')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
 
@@ -241,10 +256,9 @@ class StuLib(object):
         查询教师信息
         :param jsh:8位教师号
         """
-        session = requests.Session()
-        url = self.get_url('get_teacher_info')
         params = {'jsh': jsh}
-        page = session.get(url, params=params).content
+        res = self.catch_response(self.get_teacher_info.func_name, params=params)
+        page = res.text
         ss = SoupStrainer('table')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
 
@@ -263,7 +277,6 @@ class StuLib(object):
                 teacher_info[v[i]] = v[i + 1]
         return teacher_info
 
-    @unfinished
     def get_class_students(self, xqdm, kcdm, jxbh):
         """
         教学班查询
@@ -271,20 +284,18 @@ class StuLib(object):
         :param kcdm: 课程代码
         :param jxbh: 教学班号
         """
-        session = requests.Session()
-        url = self.get_url('get_class_students')
         params = {'xqdm': xqdm,
                   'kcdm': kcdm,
                   'jxbh': jxbh}
-        page = session.get(url, params=params).text
+        res = self.catch_response(self.get_class_students.func_name, params=params)
+        page = res.text
         # 狗日的网页代码写错了无法正确解析标签!
         term_p = r'\d{4}-\d{4}学年第(一|二)学期'
         term = re.search(term_p, page)
         class_name_p = r'[\u4e00-\u9fa5\w-]+\d{4}班'
         class_name = re.search(class_name_p, page)
         # 虽然 \S 能解决匹配失败中文的问题, 但是最后的结果还是乱码的
-        # todo: 需要解决 requests 不能对 GBK 转 UTF8 无损转换的问题
-        stu_p = r'>\s*?(\d{1,3})\s*?</.*?>\s*?(\d{10})\s*?</.*?>\s*?([\u4e00-\u9fa5*]+|\S+)\s*?</'
+        stu_p = r'>\s*?(\d{1,3})\s*?</.*?>\s*?(\d{10})\s*?</.*?>\s*?([\u4e00-\u9fa5*]+)\s*?</'
         stus = re.findall(stu_p, page, re.DOTALL)
         if term and class_name and stus:
             stus = map(lambda v: {'序号': v[0], '学号': v[1], '姓名': v[2]}, stus)
@@ -304,13 +315,11 @@ class StuLib(object):
         :param kcdm: 课程代码
         :param jxbh: 教学班号
         """
-        url = self.get_url('get_class_info')
         params = {'xqdm': xqdm,
                   'kcdm': kcdm,
                   'jxbh': jxbh}
-        session = requests.Session()
-
-        page = session.get(url, params=params).content
+        res = self.catch_response(self.get_class_info.func_name, params=params)
+        page = res.text
         ss = SoupStrainer('table', width='600')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
         # 有三行
@@ -335,23 +344,40 @@ class StuLib(object):
         return class_info
 
     @unfinished
-    def get_lesson_detail(self, xqdm, kcdm=None, kcmc=None):
+    def search_lessons(self, xqdm, kcdm=None, kcmc=None):
         """
         课程查询
         :param xqdm: 学期代码
         :param kcdm: 课程代码
         :param kcmc: 课程名称
         """
-        # todo:完成课程查询, 使用 kcdm 无法查询成功
+        # todo:完成课程查询, 使用 kcmc 无法查询成功, 可能是请求编码有问题
         if kcdm is None and kcmc is None:
             raise ValueError('kcdm 和 kcdm 参数必须至少存在一个')
-        session = requests.Session()
-        url = self.get_url('get_lesson_detail')
         data = {'xqdm': xqdm,
                 'kcdm': kcdm,
                 'kcmc': kcmc}
-        page = session.post(url, data=data).content
-        print page
+        res = self.catch_response(self.search_lessons.func_name, method='post', data=data)
+
+        page = res.text
+        ss = SoupStrainer('table', width='650')
+        bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
+        term = bs.find('font', size='3', string=re.compile(r'\d{4}-\d{4}学年第(一|二)学期'))
+        title = bs.find('tr', bgcolor='#FB9E04')
+        trs = bs.find_all('tr', bgcolor=re.compile(r'#D6D3CE|#B4B9B9'))
+        if term and title and trs:
+            lessons = []
+            term = term.string.strip()
+            keys = tuple(title.stripped_strings)
+            value_list = [tr.stripped_strings for tr in trs]
+            for values in value_list:
+                lesson = dict(zip(keys, values))
+                lesson['课程代码'] = lesson['课程代码'].upper()
+                lessons.append(lesson)
+            return {'学期': term, '课程': lessons}
+        else:
+            logger.warning('没有找到结果\n xqdm={:s}, kcdm={:s}, kcmc={:s}'.format(xqdm, kcdm, kcmc))
+            return None
 
     def get_teaching_plan(self, xqdm, kclxdm, ccjbyxzy):
         """
@@ -360,13 +386,11 @@ class StuLib(object):
         :param kclxdm: 课程类型代码 必修为 1, 任选为 3
         :param ccjbyxzy: 专业
         """
-        session = requests.Session()
-        url = self.get_url('get_teaching_plan')
-
         data = {'xqdm': xqdm,
                 'kclxdm': kclxdm,
                 'ccjbyxzy': ccjbyxzy}
-        page = session.post(url, data=data).content
+        res = self.catch_response(self.get_teaching_plan.func_name, method='post', data=data)
+        page = res.text
         ss = SoupStrainer('table', width='650')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
         trs = bs.find_all('tr')
@@ -394,13 +418,11 @@ class StuLib(object):
         if newpwd == oldpwd:
             return True
 
-        session = self.session
-        url = self.get_url('change_password')
-
         data = {'oldpwd': oldpwd,
                 'newpwd': newpwd,
                 'new2pwd': new2pwd}
-        page = session.post(url, data=data).content
+        res = self.catch_response(self.change_password.func_name, method='post', need_login=True, data=data)
+        page = res.text
         ss = SoupStrainer('table', width='580', border='0', cellspacing='1', bgcolor='#000000')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
         res = bs.text.strip()
@@ -423,10 +445,9 @@ class StuLib(object):
         if not p.match(tel):
             return False
 
-        session = self.session
-        url = self.get_url('set_telephone')
         data = {'tel': tel}
-        page = session.post(url, data=data).content
+        res = self.catch_response(self.set_telephone.func_name, method='post', need_login=True, data=data)
+        page = res.text
         ss = SoupStrainer('input', attrs={'name': 'tel'})
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
         return bs.input['value'] == tel
@@ -438,10 +459,10 @@ class StuLib(object):
         :param kclx: 课程类型参数,只有三个值,{x:全校公选课, b:全校必修课, jh:本专业计划},默认为'x'
         """
         if kclx in ('x', 'b', 'jh'):
-            session = self.session
-            url = self.get_url('get_optional_lessons')
             params = {'kclx': kclx}
-            page = session.get(url, params=params, allow_redirects=False).content
+            res = self.catch_response(self.get_optional_lessons.func_name, need_login=True,
+                                      params=params, allow_redirects=False)
+            page = res.text
             ss = SoupStrainer('table', id='KCTable')
             bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
             lessons = []
@@ -462,9 +483,8 @@ class StuLib(object):
         """
         获取已选课程
         """
-        session = self.session
-        url = self.get_url('get_selected_lessons')
-        page = session.get(url, allow_redirects=False).content
+        res = self.catch_response(self.get_selected_lessons.func_name, need_login=True, allow_redirects=False)
+        page = res.text
         ss = SoupStrainer('table', id='TableXKJG')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
 
@@ -496,12 +516,11 @@ class StuLib(object):
         """
         if self.is_lesson_selected(kcdm):
             logger.warning('你已经选了课程 {:s}, 如果你要选课的话, 请勿选取此课程代码'.format(kcdm))
-        session = requests.Session()
         params = {'kcdm': kcdm}
-        url = self.get_url('get_lesson_classes')
-        r = session.get(url, params=params, allow_redirects=False)
+        res = self.catch_response(self.get_lesson_classes, params=params, allow_redirects=False)
+        page = res.text
         ss = SoupStrainer('table', id='JXBTable')
-        bs = BeautifulSoup(r.content, 'html.parser', parse_only=ss)
+        bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
         trs = bs.find_all('tr')
 
         lesson_classes = []
@@ -561,26 +580,25 @@ class StuLib(object):
             kcdms_data.append(lesson['课程代码'])
             jxbhs_data.append(lesson['教学班号'])
 
-        session = self.session
         data = {'xh': self.stu_id, 'kcdm': kcdms_data, 'jxbh': jxbhs_data}
-        r = session.post(self.get_url('select_lesson'), data=data, allow_redirects=False)
-
-        if r.status_code == 302:
+        res = self.catch_response(self.select_lesson.func_name, method='post', need_login=True,
+                                  data=data, allow_redirects=False)
+        if res.status_code == 302:
             msg = '提交选课失败, 可能是身份验证过期或选课系统已关闭'
             logger.error(msg)
             raise ValueError(msg)
         else:
-            page = r.text
+            page = res.text
             # 当选择同意课程的多个教学班时, 若已选中某个教学班, 再选择其他班数据库会出错,
             # 其他一些不可预料的原因也会导致数据库出错
             p = re.compile(r'(成功提交选课数据|容量已满,请选择其他教学班).+?'
                            r'课程代码：\s*([\dbBxX]+)[\s;&nbsp]*教学班号：\s*(\d{4})', re.DOTALL)
-            res = p.findall(page)
-            if not res:
+            r = p.findall(page)
+            if not r:
                 logger.warning('正则没有匹配到结果，可能出现了一些状况\n{:s}'.format(page))
                 return None
             results = []
-            for g in res:
+            for g in r:
                 logger.info(' '.join(g))
                 msg, kcdm, jxbh = g
                 if msg == '成功提交选课数据':
@@ -601,24 +619,25 @@ class StuLib(object):
                 kcdms_data.append(lesson['课程代码'])
                 jxbhs_data.append(lesson['教学班号'])
 
-        session = self.session
         data = {'xh': self.stu_id, 'kcdm': kcdms_data, 'jxbh': jxbhs_data}
-        r = session.post(self.get_url('select_lesson'), data=data, allow_redirects=False)
-        if r.status_code == 302:
+        res = self.catch_response(self.select_lesson.func_name, method='post', need_login=True,
+                                  data=data, allow_redirects=False)
+        if res.status_code == 302:
             msg = '课程删除失败, 可能是身份验证过期或选课系统已关闭'
             logger.error(msg)
             raise ValueError(msg)
         else:
-            page = r.text
+            page = res.content.decode(self.SITE_ENCODING)
             # 当选择同意课程的多个教学班时, 若已选中某个教学班, 再选择其他班数据库会出错,
             # 其他一些不可预料的原因也会导致数据库出错
-            p = re.compile(r'(已成功删除下列选课数据).+?课程代码：\s*([\dbBxX]+)[\s;&nbsp]*教学班号：\s*(\d{4})', re.DOTALL)
-            res = p.findall(page)
-            if not res:
+            p = re.compile(r'(已成功删除下列选课数据).+?课程代码：\s*([\dbBxX]+)[\s;&nbsp]*教学班号：\s*(\d{4})',
+                           re.DOTALL)
+            r = p.findall(page)
+            if not r:
                 logger.warning('正则没有匹配到结果，可能出现了一些状况\n{:s}'.format(page))
                 return None
             results = []
-            for g in res:
+            for g in r:
                 logger.info(' '.join(g))
                 msg, kcdm, jxbh = g
                 result = {'课程代码': kcdm.upper(), '教学班号': jxbh}
