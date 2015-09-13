@@ -22,7 +22,7 @@ class StuLib(object):
     SITE_ENCODING = 'gbk'
 
     def __init__(self, stu_id, password):
-        self.stu_id = stu_id
+        self.stu_id = int(stu_id)
         self.password = password
         self.session = self.login()
 
