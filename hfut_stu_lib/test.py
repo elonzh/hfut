@@ -7,6 +7,7 @@ import unittest
 
 from lib import StuLib
 from logger import logger
+from util import get_point, cal_gpa
 
 try:
     import uniout
@@ -14,7 +15,7 @@ except ImportError:
     logger.info('安装 uniout 库能够直接显示 unicode 内容')
 
 
-class StuLibTest(unittest.TestCase):
+class BaseTest(unittest.TestCase):
     logger.setLevel(logging.DEBUG)
     stu = StuLib(2013217413, '1234567')
     # stu = StuLib(2013217399, '8280613')
@@ -23,6 +24,8 @@ class StuLibTest(unittest.TestCase):
     def assertEveryKeys(self, seq, keys):
         map(lambda v: self.assertSequenceEqual(v.keys(), keys), seq)
 
+
+class StuLibTest(BaseTest):
     def test_login(self):
         try:
             StuLib(2013217413, '123')
@@ -129,16 +132,21 @@ class StuLibTest(unittest.TestCase):
         self.assertEveryKeys(res, keys)
 
     def test_get_selected_lessons(self):
-        # todo: 待补充 get_selected_lessons 测试用例
-        pass
+        keys = ['费用', '教学班号', '课程名称', '课程代码', '学分', '课程类型']
+        res = self.stu.get_selected_lessons()
+        self.assertEveryKeys(res, keys)
 
     def test_is_lesson_selected(self):
-        # todo: 待补充 is_lesson_selected 测试用例
-        pass
+        self.assertFalse(self.stu.is_lesson_selected('1234567'))
+        self.assertFalse(self.stu.is_lesson_selected('0700052B'))
+        self.assertTrue(self.stu.is_lesson_selected('0532232B'))
 
     def test_get_lesson_classes(self):
-        # todo: 待补充 get_lesson_classes 测试用例
-        pass
+        keys = ['优选范围', '教师', '教学班号']
+        detail_keys = ['教师', '开课单位', '课程类型', '教学班号', '校区', '禁选范围', '时间地点', '性别限制',
+                       '课程名称', '优选范围', '备 注', '学分', '考核类型', '选中人数', '起止周']
+        self.assertEveryKeys(self.stu.get_lesson_classes('0521290X'), keys)
+        self.assertEveryKeys(self.stu.get_lesson_classes('0521290X', detail=True), detail_keys)
 
     def test_select_lesson(self):
         # todo: 待补充 select_lesson 测试用例
@@ -147,6 +155,33 @@ class StuLibTest(unittest.TestCase):
     def test_delete_lesson(self):
         # todo: 待补充 delete_lesson 测试用例
         pass
+
+
+class UtilTest(BaseTest):
+    def test_get_point(self):
+        self.assertEqual(get_point('100'), 4.3)
+        self.assertEqual(get_point(100), 4.3)
+        self.assertEqual(get_point(90), 4.0)
+        self.assertEqual(get_point(85), 3.7)
+        self.assertEqual(get_point(82), 3.3)
+        self.assertEqual(get_point(78), 3.0)
+        self.assertEqual(get_point(75), 2.7)
+        self.assertEqual(get_point(72), 2.3)
+        self.assertEqual(get_point(68), 2.0)
+        self.assertEqual(get_point(66), 1.7)
+        self.assertEqual(get_point(64), 1.3)
+        self.assertEqual(get_point(60), 1.0)
+        self.assertEqual(get_point('优'), 3.9)
+        self.assertEqual(get_point(str('优')), 3.9)
+        self.assertEqual(get_point(str('良')), 3.0)
+        self.assertEqual(get_point(str('中')), 2.0)
+        self.assertEqual(get_point(str('及格')), 1.2)
+        self.assertEqual(get_point(str('不及格')), 0)
+        self.assertRaises(AssertionError, get_point, 150)
+        self.assertRaises(ValueError, get_point, '蛤蛤')
+
+    def test_cal_gpa(self):
+        self.assertIsInstance(cal_gpa(self.stu.get_stu_grades()), tuple)
 
 
 if __name__ == '__main__':

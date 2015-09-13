@@ -3,12 +3,16 @@ from __future__ import unicode_literals
 import urlparse
 import re
 import requests
+import sys
 
 from bs4 import SoupStrainer, BeautifulSoup
 
 from logger import logger
 from core import get_tr_strs
 from core import unfinished, unstable
+
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 __all__ = ['StuLib']
 
@@ -41,7 +45,10 @@ class StuLib(object):
         化工与食品加工系 172.18.6.97
         建筑工程系 172.18.6.98
         商学系 172.18.6.99
-        :param func_name:
+        :param func_name: 调用的方法名
+        :type func_name: unicode
+        :return: 相应功能的绝对请求地址
+        :rtype : unicode
         """
         urls = {
             # 登陆页 POST 无需登陆
@@ -517,7 +524,7 @@ class StuLib(object):
         if self.is_lesson_selected(kcdm):
             logger.warning('你已经选了课程 {:s}, 如果你要选课的话, 请勿选取此课程代码'.format(kcdm))
         params = {'kcdm': kcdm}
-        res = self.catch_response(self.get_lesson_classes, params=params, allow_redirects=False)
+        res = self.catch_response(self.get_lesson_classes.func_name, params=params, allow_redirects=False)
         page = res.text
         ss = SoupStrainer('table', id='JXBTable')
         bs = BeautifulSoup(page, 'html.parser', parse_only=ss)

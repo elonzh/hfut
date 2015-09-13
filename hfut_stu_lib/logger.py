@@ -1,6 +1,11 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals
+import sys
+
 from logging import Logger, WARNING, StreamHandler, Formatter
+
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 logger = Logger('hfut_stu_lib', level=WARNING)
 

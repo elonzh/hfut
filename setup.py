@@ -11,7 +11,7 @@ setup(
     name='hfut_stu_lib',
     version=hfut_stu_lib.__version__,
     keywords=('hfut', 'spider', 'edu', 'student', 'interface'),
-    description='Provided full-featured interfaces for the educational administration system of HeFei University of Technology.',
+    description='Provided full-featured interfaces for the educational administration system of HFUT.',
     long_description=long_description,
     license='MIT License',
     install_requires=['requests', 'beautifulsoup4'],
