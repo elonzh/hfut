@@ -7,11 +7,10 @@ import urlparse
 from bs4 import SoupStrainer
 from bs4 import BeautifulSoup
 
-from .. import SITE_ENCODING
+from .. import SITE_ENCODING, HOST_URL
 from ..logger import hfut_stu_lib_logger
 from ..core import unstable, regist_api
 from ..parser import parse_tr_strs
-from request import HOST_URL
 from ..api.guest import get_lesson_classes
 
 __all__ = ['get_code', 'get_stu_info', 'get_stu_grades', 'get_stu_timetable', 'get_stu_feeds', 'change_password',
