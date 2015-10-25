@@ -21,8 +21,8 @@ Provided full-featured interfaces for the educational administration system of H
 - 使用
 
     ```
-    >>> from hfut_stu_lib import StuLib
-    >>> stu = StuLib(2013217413, 'your-password')
+    >>> from hfut_stu_lib import AuthSession
+    >>> stu = AuthSession('your-account', 'your-password', 'student')
     >>> stu.get_stu_info()
     ```
 
