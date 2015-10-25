@@ -11,3 +11,10 @@ __version__ = '0.1.3'
 __author__ = 'erliang'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2015 erliang'
+
+SITE_ENCODING = 'gbk'
+HOST_URL = 'http://222.195.8.201/'
+
+from . import api
+from .core import regist_api, registered_api
+from .session import AuthSession

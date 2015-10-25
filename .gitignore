@@ -154,6 +154,8 @@ coverage.xml
 
 # Translations
 /hfut_stu_lib/class_info.html
+/request.py
+/lib.py
 /func_factory.py
 *.mo
 *.pot

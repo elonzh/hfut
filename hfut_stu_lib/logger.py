@@ -1,15 +1,11 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals
-import sys
 
 from logging import Logger, WARNING, StreamHandler, Formatter
 
-reload(sys)
-sys.setdefaultencoding('utf-8')
-
-logger = Logger('hfut_stu_lib', level=WARNING)
+hfut_stu_lib_logger = Logger('hfut_stu_lib', level=WARNING)
 
 sh = StreamHandler()
 fmt = Formatter('%(levelname)s:%(filename)s-%(lineno)d %(funcName)s: %(message)s')
 sh.setFormatter(fmt)
-logger.addHandler(sh)
+hfut_stu_lib_logger.addHandler(sh)

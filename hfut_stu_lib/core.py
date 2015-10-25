@@ -1,49 +1,36 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals
-import sys
+from functools import update_wrapper
 
-from logger import logger
+from .logger import hfut_stu_lib_logger
 
-reload(sys)
-sys.setdefaultencoding('utf-8')
+registered_api = dict()
 
 
 def unfinished(func):
     msg = '{:s} 尚未完成, 请勿尝试使用'.format(func.__name__)
-    logger.error(msg)
+    hfut_stu_lib_logger.error(msg)
     return func
 
 
 def unstable(func):
-    logger.warning('{:s} 功能尚不稳定, 建议使用时验证结果的正确性'.format(func.__name__))
+    hfut_stu_lib_logger.warning('{:s} 功能尚不稳定, 建议使用时验证结果的正确性'.format(func.__name__))
     return func
 
 
-def get_tr_strs(trs):
-    """
-    将没有值但有必须要的单元格的值设置为 None
-    将 <tr> 标签数组内的单元格文字解析出来并返回一个二维列表
-    :param trs: <tr> 标签数组, 为 BeautifulSoup 节点对象
-    :return: 二维列表
-    """
-    tr_strs = []
-    for tr in trs:
-        strs = []
-        for td in tr.find_all('td'):
-            # 使用 stripped_strings 防止 td 中还有标签
-            # 如: 不及格课程会有一个<font>标签导致tds[i].string为None
-            # <FONT COLOR=#FF0000>37    </FONT></TD>
-            # stripped_strings 是一个生成器, 没有长度
-            # 生成器迭代一次就没有了, 需要转换为 tuple 或 list 进行保存
-            s_list = tuple(td.stripped_strings)
-            l = len(s_list)
-            if l == 1:
-                strs.append(s_list[0])
-            elif l == 0:
-                strs.append(None)
+def regist_api(url, method='get', user_type='guest'):
+    def _dec(func):
+        def _wrapper(session, *args, **kwargs):
+            if session.user_type.lower() != user_type and user_type != 'guest':
+                raise TypeError('用户类型不正确, session.user_type 应该为 {} 而不是 {}'
+                                .format(user_type, session.user_type))
             else:
-                msg = 'td标签中含有多个字符串\n{:s}'.format(td)
-                print s_list
-                raise ValueError(msg)
-        tr_strs.append(strs)
-    return tr_strs
+                return func(session, *args, **kwargs)
+
+        w = update_wrapper(_wrapper, func)
+
+        api_info = dict(url=url, method=method.lower(), user_type=user_type, func=w)
+        registered_api[func.func_name] = api_info
+        return w
+
+    return _dec
