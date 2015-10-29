@@ -1,14 +1,6 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals
 
-"""
-1. 接口和session应当分离
-2. 区分公共接口与个人接口
-3. 缓存控制
-4. 接口参数不变化
-5. 缓存为全局管理，与session不绑定
-"""
-
 
 def parse_tr_strs(trs):
     """

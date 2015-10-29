@@ -1,18 +1,11 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals
-
 import logging
-
 import unittest
 
 from hfut_stu_lib.session import AuthSession
 from hfut_stu_lib.logger import hfut_stu_lib_logger
 from hfut_stu_lib.util import get_point, cal_gpa
-
-try:
-    import uniout
-except ImportError:
-    hfut_stu_lib_logger.info('安装 uniout 库能够直接显示 unicode 内容')
 
 
 class BaseTest(unittest.TestCase):

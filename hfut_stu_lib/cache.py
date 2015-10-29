@@ -1,82 +1,100 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals
-import inspect
-import cPickle
+import os
 import time
-from hashlib import md5
+import cPickle
+import anydbm as dbm
 
-try:
-    import anydbm as dbm
+from .core import g
+from .logger import hfut_stu_lib_logger as logger
 
-    assert dbm
-except ImportError:
-    import dbm
+DEFAULT_DURATION = 259200
 
 
-class MemoryCache(object):
-    def __init__(self, default_duration=259200):
+class BaseCache(object):
+    def __new__(cls, *args, **kwargs):
+        if g.current_cache_manager:
+            logger.warning('已存在缓存管理对象 {} 操作不会生效'.format(g.current_cache_manager))
+        else:
+            g.current_cache_manager = cls.self = object.__new__(cls)
+
+        return g.current_cache_manager
+
+    def get(self, cache_md5):
+        raise NotImplementedError
+
+    def set(self, cache_md5, value, duration=None):
+        raise NotImplementedError
+
+    def delete(self, cache_md5):
+        raise NotImplementedError
+
+    def drop(self):
+        raise NotImplementedError
+
+
+class MemoryCache(BaseCache):
+    def __init__(self, default_duration=DEFAULT_DURATION):
         self.default_duration = default_duration
         self.data_container = {}
 
-    def get(self, args_md5):
-        data = self.data_container.get(args_md5)
+    def get(self, cache_md5):
+        data = self.data_container.get(cache_md5)
         rv = None
         if data:
             if data['expire_time'] > time.time():
                 rv = data['value']
             else:
-                del self.data_container[args_md5]
+                del self.data_container[cache_md5]
         return rv
 
-    def set(self, args_md5, value, duration=None):
+    def set(self, cache_md5, value, duration=None):
         duration = duration or self.default_duration
         expire_time = time.time() + duration
         data = dict(value=value, expire_time=expire_time)
-        self.data_container[args_md5] = data
+        self.data_container[cache_md5] = data
 
-    def delete(self, args_md5):
-        del self.data_container[args_md5]
+    def delete(self, cache_md5):
+        del self.data_container[cache_md5]
 
-    def cal_args_md5(self, func_name, is_public, *args, **kwargs):
-        argsspec = inspect.getcallargs(func, self, *args, **kwargs)
-        argsspec.pop('self')
-        if not is_public:
-            argsspec[self.stu_id] = self.stu_id
-        args_md5 = md5(cPickle.dumps(argsspec)).hexdigest()
-        return args_md5
-
-    def cache(self, duration=None, is_public=False):
-        inst_proxy = self
-
-        def _dec(func):
-            def _wrapper(self, *args, **kwargs):
-                argsspec = inspect.getcallargs(func, self, *args, **kwargs)
-                argsspec.pop('self')
-                if not is_public:
-                    argsspec[self.stu_id] = self.stu_id
-                args_md5 = md5(cPickle.dumps(argsspec)).hexdigest()
-
-                rv = inst_proxy.get(args_md5)
-                if not rv:
-                    print '没有触发缓存'
-                    rv = func.__get__(self, type(self))(*args, **kwargs)
-                    inst_proxy.set(args_md5, value=rv, duration=duration)
-                return rv
-
-            return _wrapper
-
-        return _dec
+    def drop(self):
+        self.data_container = {}
 
 
-class FileCache(MemoryCache):
-    def __init__(self, filename='hfut_stu_lib_cache', default_duration=259200):
-        super(FileCache, self).__init__(default_duration)
-        self.data_container = dbm.open(filename, 'c')
+class FileCache(BaseCache):
+    def __init__(self, filename='hfut_stu_lib_cache', default_duration=DEFAULT_DURATION):
+        self.filename = filename
+        self.data_container = dbm.open(self.filename, 'c')
+        self.default_duration = default_duration
 
+    def get(self, cache_md5):
+        data = self.data_container.get(cache_md5)
+        rv = None
+        if data:
+            data = cPickle.loads(data)
+            if data['expire_time'] > time.time():
+                rv = data['value']
+            else:
+                del self.data_container[cache_md5]
+                self.save()
+        return rv
 
-if __name__ == '__main__':
-    c = FileCache()
-    from lib import StuLib
+    def set(self, cache_md5, value, duration=None):
+        duration = duration or self.default_duration
+        expire_time = time.time() + duration
+        data = dict(value=value, expire_time=expire_time)
 
-    stu = StuLib(2013217413, '1234567')
-    print stu.get_stu_info()
+        self.data_container[cache_md5] = cPickle.dumps(data)
+        self.save()
+
+    def delete(self, cache_md5):
+        del self.data_container[cache_md5]
+        self.save()
+
+    def drop(self):
+        if os.path.isfile(self.filename):
+            os.rmdir(self.filename)
+
+    def save(self):
+        self.data_container.close()
+        self.data_container = dbm.open(self.filename, 'c')

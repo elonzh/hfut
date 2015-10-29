@@ -1,6 +1,12 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals
 import sys
+import inspect
+import cPickle
+
+from hashlib import md5
+
+from .logger import hfut_stu_lib_logger as logger
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -80,4 +86,15 @@ def cal_gpa(grades):
         gpa_points_sum += credit * point
     ave_point = points_sum / lessons_sum
     gpa = gpa_points_sum / credit_sum
-    return ave_point, gpa
+    return round(ave_point, 5), round(gpa, 5)
+
+
+def cal_cache_md5(func, session, is_public=False, *args, **kwargs):
+    argsspec = inspect.getcallargs(func, session, *args, **kwargs)
+    argsspec.pop('session')
+    argsspec['func_name'] = func.func_name
+    if not is_public:
+        argsspec[session.account] = session.account
+    cache_md5 = md5(cPickle.dumps(argsspec)).hexdigest()
+    logger.debug('{} is_public:{} args:{} kwargs:{} md5:{}'.format(func.func_name, is_public, args, kwargs, cache_md5))
+    return cache_md5

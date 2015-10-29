@@ -5,14 +5,15 @@ import re
 from bs4 import SoupStrainer, BeautifulSoup
 
 from ..logger import hfut_stu_lib_logger
-from ..core import unfinished, regist_api
+from ..core import unfinished, register_api, cache_api
 from ..parser import parse_tr_strs
 
 __all__ = ['get_class_students', 'get_class_info', 'search_lessons', 'get_teaching_plan', 'get_teacher_info',
            'get_lesson_classes']
 
 
-@regist_api('student/asp/Jxbmdcx_1.asp')
+@register_api('student/asp/Jxbmdcx_1.asp')
+@cache_api(duration=259200, is_public=True)
 def get_class_students(session, xqdm, kcdm, jxbh):
     """
     教学班查询
@@ -45,10 +46,12 @@ def get_class_students(session, xqdm, kcdm, jxbh):
         raise ValueError(msg)
 
 
-@regist_api('student/asp/xqkb1_1.asp')
+@register_api('student/asp/xqkb1_1.asp')
+@cache_api(duration=259200, is_public=True)
 def get_class_info(session, xqdm, kcdm, jxbh):
     """
     获取教学班详情
+    :rtype : dict
     :param xqdm: 学期代码
     :param kcdm: 课程代码
     :param jxbh: 教学班号
@@ -84,7 +87,8 @@ def get_class_info(session, xqdm, kcdm, jxbh):
 
 
 @unfinished
-@regist_api('student/asp/xqkb1.asp', 'post')
+@register_api('student/asp/xqkb1.asp', 'post')
+@cache_api(duration=259200, is_public=True)
 def search_lessons(session, xqdm, kcdm=None, kcmc=None):
     """
     课程查询
@@ -103,25 +107,25 @@ def search_lessons(session, xqdm, kcdm=None, kcmc=None):
     page = res.text
     ss = SoupStrainer('table', width='650')
     bs = BeautifulSoup(page, 'html.parser', parse_only=ss)
-    term = bs.find('font', size='3', string=re.compile(r'\d{4}-\d{4}学年第(一|二)学期'))
     title = bs.find('tr', bgcolor='#FB9E04')
     trs = bs.find_all('tr', bgcolor=re.compile(r'#D6D3CE|#B4B9B9'))
-    if term and title and trs:
+
+    if title and trs:
         lessons = []
-        term = term.string.strip()
         keys = tuple(title.stripped_strings)
         value_list = [tr.stripped_strings for tr in trs]
         for values in value_list:
             lesson = dict(zip(keys, values))
             lesson['课程代码'] = lesson['课程代码'].upper()
             lessons.append(lesson)
-        return {'学期': term, '课程': lessons}
+        return lessons
     else:
         hfut_stu_lib_logger.warning('没有找到结果\n xqdm={:s}, kcdm={:s}, kcmc={:s}'.format(xqdm, kcdm, kcmc))
         return None
 
 
-@regist_api('student/asp/xqkb2.asp', 'post')
+@register_api('student/asp/xqkb2.asp', 'post')
+@cache_api(duration=259200, is_public=True)
 def get_teaching_plan(session, xqdm, kclxdm, ccjbyxzy):
     """
     计划查询
@@ -147,7 +151,8 @@ def get_teaching_plan(session, xqdm, kclxdm, ccjbyxzy):
     return teaching_plan
 
 
-@regist_api('teacher/asp/teacher_info.asp')
+@register_api('teacher/asp/teacher_info.asp')
+@cache_api(duration=259200, is_public=True)
 def get_teacher_info(session, jsh):
     """
     查询教师信息
@@ -175,7 +180,8 @@ def get_teacher_info(session, jsh):
     return teacher_info
 
 
-@regist_api('student/asp/select_topRight.asp')
+@register_api('student/asp/select_topRight.asp')
+@cache_api(duration=259200, is_public=True)
 def get_lesson_classes(session, kcdm, detail=False):
     """
     获取选课系统中课程的可选教学班级

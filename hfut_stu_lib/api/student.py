@@ -4,26 +4,27 @@ from __future__ import unicode_literals
 import re
 import urlparse
 
-from bs4 import SoupStrainer
-from bs4 import BeautifulSoup
+from bs4 import SoupStrainer, BeautifulSoup
 
-from .. import SITE_ENCODING, HOST_URL
+from .. import SITE_ENCODING, HOST_URL, STUDENT
 from ..logger import hfut_stu_lib_logger
-from ..core import unstable, regist_api
+from ..core import unstable, register_api, cache_api
 from ..parser import parse_tr_strs
-from ..api.guest import get_lesson_classes
+from .guest import get_lesson_classes
 
 __all__ = ['get_code', 'get_stu_info', 'get_stu_grades', 'get_stu_timetable', 'get_stu_feeds', 'change_password',
            'set_telephone', 'get_optional_lessons', 'get_selected_lessons', 'is_lesson_selected', 'select_lesson',
            'delete_lesson']
 
 
-@regist_api('student/asp/xqjh.asp', user_type='student')
+@register_api('student/asp/xqjh.asp', user_type=STUDENT)
+@cache_api(duration=259200, is_public=True)
 def get_code(session):
     """
     获取专业, 学期的代码和名称
     """
     res = session.catch_response(get_code.func_name)
+    # res = session.catch_response('get_code')
     page = res.text
 
     ss = SoupStrainer('select')
@@ -36,7 +37,8 @@ def get_code(session):
     return result
 
 
-@regist_api('student/asp/xsxxxxx.asp', user_type='student')
+@register_api('student/asp/xsxxxxx.asp', user_type=STUDENT)
+@cache_api(duration=259200, is_public=False)
 def get_stu_info(session):
     res = session.catch_response(get_stu_info.func_name)
     page = res.text
@@ -70,7 +72,8 @@ def get_stu_info(session):
     return stu_info
 
 
-@regist_api('student/asp/Select_Success.asp', user_type='student')
+@register_api('student/asp/Select_Success.asp', user_type=STUDENT)
+@cache_api(duration=259200, is_public=False)
 def get_stu_grades(session):
     res = session.catch_response(get_stu_grades.func_name)
     page = res.text
@@ -89,7 +92,8 @@ def get_stu_grades(session):
 
 
 @unstable
-@regist_api('student/asp/grkb1.asp', user_type='student')
+@register_api('student/asp/grkb1.asp', user_type=STUDENT)
+@cache_api(duration=259200, is_public=False)
 def get_stu_timetable(session, detail=False):
     res = session.catch_response(get_stu_timetable.func_name)
     page = res.text
@@ -142,7 +146,8 @@ def get_stu_timetable(session, detail=False):
     return timetable
 
 
-@regist_api('student/asp/Xfsf_Count.asp', user_type='student')
+@register_api('student/asp/Xfsf_Count.asp', user_type=STUDENT)
+@cache_api(duration=259200, is_public=False)
 def get_stu_feeds(session):
     res = session.catch_response(get_stu_feeds.func_name)
     page = res.text
@@ -160,7 +165,7 @@ def get_stu_feeds(session):
     return feeds
 
 
-@regist_api('student/asp/amend_password_jg.asp', method='post', user_type='student')
+@register_api('student/asp/amend_password_jg.asp', method='post', user_type=STUDENT)
 def change_password(session, oldpwd, newpwd, new2pwd):
     """
     修改密码
@@ -196,7 +201,7 @@ def change_password(session, oldpwd, newpwd, new2pwd):
         return False
 
 
-@regist_api('student/asp/amend_tel.asp', method='post', user_type='student')
+@register_api('student/asp/amend_tel.asp', method='post', user_type=STUDENT)
 def set_telephone(session, tel):
     """
     更新电话
@@ -216,7 +221,7 @@ def set_telephone(session, tel):
 
 
 # ========== 选课功能相关 ==========
-@regist_api('student/asp/select_topLeft.asp', user_type='student')
+@register_api('student/asp/select_topLeft.asp', user_type=STUDENT)
 def get_optional_lessons(session, kclx='x'):
     """
     获取可选课程, 并不判断是否选满
@@ -244,7 +249,7 @@ def get_optional_lessons(session, kclx='x'):
         raise ValueError('kclx 参数不正确!')
 
 
-@regist_api('student/asp/select_down_f3.asp', user_type='student')
+@register_api('student/asp/select_down_f3.asp', user_type=STUDENT)
 def get_selected_lessons(session):
     """
     获取已选课程
@@ -264,7 +269,7 @@ def get_selected_lessons(session):
     return lessons
 
 
-@regist_api('', user_type='student')
+@register_api('', user_type=STUDENT)
 def is_lesson_selected(session, kcdm):
     """
     检查课程是否被选
@@ -278,7 +283,7 @@ def is_lesson_selected(session, kcdm):
     return False
 
 
-@regist_api('student/asp/selectKC_submit_f3.asp', method='post', user_type='student')
+@register_api('student/asp/selectKC_submit_f3.asp', method='post', user_type=STUDENT)
 def select_lesson(session, kvs):
     """
     提交选课
@@ -346,7 +351,7 @@ def select_lesson(session, kvs):
         return results
 
 
-@regist_api('student/asp/selectKC_submit_f3.asp', method='post', user_type='student')
+@register_api('student/asp/selectKC_submit_f3.asp', method='post', user_type=STUDENT)
 def delete_lesson(session, kcdms):
     # 对参数进行预处理
     kcdms = set(kcdms)
