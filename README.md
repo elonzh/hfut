@@ -1,8 +1,7 @@
 # hfut-stu-lib
 [![PyPI version](https://badge.fury.io/py/hfut_stu_lib.svg)](http://badge.fury.io/py/hfut_stu_lib)
-[![Build Status](https://travis-ci.org/evilerliang/hfut-stu-lib.svg?branch=master)](https://travis-ci.org/evilerliang/hfut-stu-lib)
-[![Coverage Status](https://coveralls.io/repos/evilerliang/hfut-stu-lib/badge.svg?branch=master&service=github)](https://coveralls.io/github/evilerliang/hfut-stu-lib?branch=master)
-[![Stories in Ready](https://badge.waffle.io/evilerliang/hfut-stu-lib.svg?label=ready&title=Ready)](http://waffle.io/evilerliang/hfut-stu-lib)
+[![Build Status](https://travis-ci.org/evilerliang/hfut-stu-lib.svg?branch=dev)](https://travis-ci.org/evilerliang/hfut-stu-lib)
+[![Coverage Status](https://coveralls.io/repos/evilerliang/hfut-stu-lib/badge.svg?branch=dev&service=github)](https://coveralls.io/github/evilerliang/hfut-stu-lib?branch=master)
 
 ----
 
