@@ -9,11 +9,6 @@ try:
 except ImportError:
     logger.info('安装 uniout 库能够直接显示 unicode 内容')
 
-from . import api
-from .core import g
-from .session import AuthSession
-from .logger import hfut_stu_lib_logger as logger
-
 __title__ = 'hfut_stu_lib'
 __version__ = '0.3.0'
 __author__ = 'erliang'
@@ -28,3 +23,9 @@ STUDENT = 'student'
 TEACHER = 'teacher'
 ADMIN = 'admin'
 USER_TYPES = (STUDENT, TEACHER, ADMIN)
+
+# 上面的常量会被其他模块用到, 所以需要先声明
+from . import api
+from .core import g
+from .session import AuthSession
+from .logger import hfut_stu_lib_logger as logger
