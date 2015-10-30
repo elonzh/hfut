@@ -1,5 +1,4 @@
 # hfut-stu-lib
-
 [![PyPI version](https://badge.fury.io/py/hfut_stu_lib.svg)](http://badge.fury.io/py/hfut_stu_lib)
 [![Build Status](https://travis-ci.org/evilerliang/hfut-stu-lib.svg?branch=dev)](https://travis-ci.org/evilerliang/hfut-stu-lib)
 [![Coverage Status](https://coveralls.io/repos/evilerliang/hfut-stu-lib/badge.svg?branch=dev&service=github)](https://coveralls.io/github/evilerliang/hfut-stu-lib?branch=dev)
