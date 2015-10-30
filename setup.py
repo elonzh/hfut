@@ -24,5 +24,5 @@ setup(
     platforms='any',
     test_suite='hfut_stu_lib.test',
 
-    datafile=[('./', ['README.md', 'CHANGES.md', 'LICENSE'])],
+    data_files=[('', ['README.md', 'CHANGES.md', 'LICENSE'])],
 )
