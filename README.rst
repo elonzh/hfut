@@ -19,12 +19,12 @@ hfut-stu-lib
 Provided full-featured interfaces for the educational administration system of HeFei University of Technology.
 
 提供了合肥工业大学教务系统学生端接口并提供了方便开发者开发围绕学生数据的一些工具
+
 由于本部的登录方式有所不同, 本部教务系统暂时无法使用
 
-.. contents::
-    :local:
-    :depth: 1
-    :backlinks: none
+欢迎编程爱好者star或者fork, 同时为想学 Python 的新手提供一些指导
+
+.. contents:: 目录
 
 -----
 
@@ -135,7 +135,7 @@ Provided full-featured interfaces for the educational administration system of H
         >>> g.current_cache_manager.get(cache)
 
 * 开发及拓展模块
-    你可以开发自己额外的接口和缓存管理对象, 只要注意一下规则即可
+    你可以开发自己额外的接口和缓存管理对象, 只要注意一下规则即可, 或者 fork 一个分支, 开发好了提交 PullRequest 合并到这个项目中
     一个接口大概是这样的::
 
         from hfut_stu_lib import register_api, cache_api
