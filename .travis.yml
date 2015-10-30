@@ -13,3 +13,6 @@ after_success:
 notifications:
     webhooks:
       - https://hook.lesschat.com/travisci/0a425481371c405990a7ffc73ae4b299
+    slack:
+      on_success: never
+      on_failure: never

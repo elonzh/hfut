@@ -3,7 +3,11 @@ from __future__ import unicode_literals
 import os
 import time
 import cPickle
-import anydbm as dbm
+
+try:
+    import dbm
+except ImportError:
+    import anydbm as dbm
 
 from .core import g
 from .logger import hfut_stu_lib_logger
@@ -68,7 +72,10 @@ class FileCache(BaseCache):
         self.default_duration = default_duration
 
     def get(self, cache_md5):
-        data = self.data_container.get(cache_md5)
+        try:
+            data = self.data_container[cache_md5]
+        except KeyError:
+            data = None
         rv = None
         if data:
             data = cPickle.loads(data)
