@@ -12,6 +12,8 @@ except ImportError:
 from .core import g
 from .logger import hfut_stu_lib_logger
 
+__all__ = ['BaseCache', 'MemoryCache', 'FileCache']
+
 DEFAULT_DURATION = 259200
 
 

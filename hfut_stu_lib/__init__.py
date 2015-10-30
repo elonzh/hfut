@@ -13,6 +13,7 @@ __copyright__ = 'Copyright 2015 erliang'
 
 from . import api
 from .core import g
+from .cache import *
 from .const import *
 from .session import AuthSession
 from .logger import hfut_stu_lib_logger

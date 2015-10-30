@@ -110,8 +110,6 @@ def get_stu_timetable(session, detail=False):
         if lesson is None:
             return None
 
-        import re
-
         p = re.compile(r'(.+?)\[(.+?) \((\d{1,2})-(\d{1,2})(单|)周\)\]/')
         matched_results = p.findall(unicode(lesson))
         results = []
