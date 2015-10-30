@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from setuptools import setup, find_packages
 import hfut_stu_lib
 
-with open('README.md') as fp:
+with open('README.rst') as fp:
     long_description = fp.read()
 
 setup(
