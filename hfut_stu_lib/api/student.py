@@ -6,7 +6,7 @@ import urlparse
 
 from bs4 import SoupStrainer, BeautifulSoup
 
-from .. import SITE_ENCODING, HOST_URL, STUDENT
+from ..const import SITE_ENCODING, HOST_URL, STUDENT
 from ..logger import hfut_stu_lib_logger
 from ..core import unstable, register_api, cache_api
 from ..parser import parse_tr_strs

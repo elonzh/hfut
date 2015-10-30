@@ -6,7 +6,7 @@ import cPickle
 import anydbm as dbm
 
 from .core import g
-from .logger import hfut_stu_lib_logger as logger
+from .logger import hfut_stu_lib_logger
 
 DEFAULT_DURATION = 259200
 
@@ -14,7 +14,7 @@ DEFAULT_DURATION = 259200
 class BaseCache(object):
     def __new__(cls, *args, **kwargs):
         if g.current_cache_manager:
-            logger.warning('已存在缓存管理对象 {} 操作不会生效'.format(g.current_cache_manager))
+            hfut_stu_lib_logger.warning('已存在缓存管理对象 {} 操作不会生效'.format(g.current_cache_manager))
         else:
             g.current_cache_manager = cls.self = object.__new__(cls)
 
@@ -62,7 +62,7 @@ class MemoryCache(BaseCache):
 
 
 class FileCache(BaseCache):
-    def __init__(self, filename='hfut_stu_lib_cache', default_duration=DEFAULT_DURATION):
+    def __init__(self, filename='hfut_stu_lib.cache', default_duration=DEFAULT_DURATION):
         self.filename = filename
         self.data_container = dbm.open(self.filename, 'c')
         self.default_duration = default_duration
@@ -93,7 +93,7 @@ class FileCache(BaseCache):
 
     def drop(self):
         if os.path.isfile(self.filename):
-            os.rmdir(self.filename)
+            os.remove(self.filename)
 
     def save(self):
         self.data_container.close()

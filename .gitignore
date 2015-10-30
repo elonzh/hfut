@@ -153,10 +153,6 @@ coverage.xml
 *,cover
 
 # Translations
-/hfut_stu_lib/class_info.html
-/request.py
-/lib.py
-/func_factory.py
 *.mo
 *.pot
 
@@ -169,3 +165,6 @@ docs/_build/
 # PyBuilder
 target/
 
+# Custom
+hfut_stu_lib/test.py
+!hfut_stu_lib/test.pyc

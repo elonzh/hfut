@@ -2,8 +2,8 @@
 from __future__ import unicode_literals
 from functools import wraps
 
-from . import GUEST
-from .logger import hfut_stu_lib_logger as logger
+from .const import GUEST
+from .logger import hfut_stu_lib_logger
 from .util import cal_cache_md5
 
 # 外层局部作用域对象只能应用不能修改, 所以将这三个变量封装了进去
@@ -12,12 +12,12 @@ g = type(str('g'), (object,), dict(registered_api={}, cached_api={}, current_cac
 
 def unfinished(func):
     msg = '{:s} 尚未完成, 请勿尝试使用'.format(func.__name__)
-    logger.error(msg)
+    hfut_stu_lib_logger.error(msg)
     return func
 
 
 def unstable(func):
-    logger.warning('{:s} 功能尚不稳定, 建议使用时验证结果的正确性'.format(func.__name__))
+    hfut_stu_lib_logger.warning('{:s} 功能尚不稳定, 建议使用时验证结果的正确性'.format(func.__name__))
     return func
 
 
@@ -46,10 +46,10 @@ def cache_api(duration=None, is_public=False):
         @wraps(func)
         def cached_api_wrapper(session, *args, **kwargs):
             if not g.current_cache_manager:
-                logger.warning('当前没有缓存管理对象, 建议声明一个缓存管理对象')
+                hfut_stu_lib_logger.warning('当前没有缓存管理对象, 建议声明一个缓存管理对象')
                 rv = func(session, *args, **kwargs)
             else:
-                cache_md5 = cal_cache_md5(func, session, is_public, *args, **kwargs)
+                cache_md5 = cal_cache_md5(func, session, is_public=is_public, *args, **kwargs)
                 rv = g.current_cache_manager.get(cache_md5)
                 if not rv:
                     rv = func(session, *args, **kwargs)
