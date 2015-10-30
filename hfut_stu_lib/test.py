@@ -46,9 +46,10 @@ class GuestTest(BaseTest):
 
     def test_search_lessons(self):
         # todo: search_lessons 未完成, 待补充测试用例
-        self.assertRaises(ValueError, self.session.search_lessons, '026')
-        # res = self.session.get_lesson_detail('026', '0400073B')
-        # pprint(res)
+        keys = ['班级容量', '教学班号', '课程名称', '任课教师', '课程代码', '课程类型', '序号']
+        self.assertRaises(ValueError, self.session.search_lessons, '027')
+        res = self.session.search_lessons('027', kcdm='1400011B')
+        self.assertEveryKeys(res, keys)
 
     def test_get_teaching_plan(self):
         keys = ['开课单位', '学时', '课程名称', '课程代码', '学分', '序号']

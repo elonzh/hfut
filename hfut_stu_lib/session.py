@@ -8,7 +8,6 @@ from .core import g
 from .logger import hfut_stu_lib_logger
 
 
-# todo: 整个缓存功能待写单元测试
 class AuthSessionMeta(type):
     def __new__(mcs, name, bases, attrs):
         for func_name, api_info in g.registered_api.iteritems():
