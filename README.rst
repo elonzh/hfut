@@ -73,6 +73,7 @@ Provided full-featured interfaces for the educational administration system of H
 
 * 通用参数说明
     参数与教务的网络请求参数基本一致
+
     * `xqdm`: 学期代码, 形如 '027', '027' 的字符串
     * `kcdm`: 课程代码, 形如 '1400011B' 的字符串
     * `jxbh`: 教学班号, 形如 '0001' 的字符串
