@@ -1,12 +1,6 @@
 # -*- coding:utf-8 -*-
-from __future__ import unicode_literals
-import inspect
-import cPickle
-
-from functools import wraps
-from hashlib import md5
-
-from .logger import hfut_stu_lib_logger
+from __future__ import unicode_literals, division
+from .const import SITE_ENCODING
 
 
 def get_point(grade_str):
@@ -86,21 +80,11 @@ def cal_gpa(grades):
     return round(ave_point, 5), round(gpa, 5)
 
 
-def cal_cache_md5(func, session, is_public=False, *args, **kwargs):
-    def _make_func_generic(func):
-        @wraps(func)
-        def _wrapper(session, *args, **kwargs):
-            return func(session, *args, **kwargs)
+def gen_noargs_api(api_request_builder_class):
+    return lambda auth_session: auth_session.api_request(api_request_builder_class().gen_api_req_obj())
 
-        return _wrapper
 
-    func = _make_func_generic(func)
-    argsspec = inspect.getcallargs(func, session, *args, **kwargs)
-    argsspec.pop('session')
-    argsspec['func_name'] = func.func_name
-    if not is_public:
-        argsspec[session.account] = session.account
-    cache_md5 = md5(cPickle.dumps(argsspec)).hexdigest()
-    hfut_stu_lib_logger.debug(
-        '{} is_public:{} argsspec:{} md5:{}'.format(func.func_name, is_public, argsspec, cache_md5))
-    return cache_md5
+def store_response(response, path='response.html', encoding=SITE_ENCODING):
+    response.encoding = encoding
+    with open(path, 'wb') as fp:
+        fp.write(response.text.encode())

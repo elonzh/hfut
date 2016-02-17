@@ -1,3 +1,17 @@
+- 20160216 v0.4.0
+    1. 删除缓存模块及相关接口
+    2. 分离一般接口与请求接口, 去除了 g 对象, 只使用列表 all_api 保存注册的一般接口
+    3. 将 AuthSession.catch_response 删除, 改用 AuthSession.api_request
+    4. 新增了 model 模块, 包含 APIRequestBuilder, APIRequest, APIResult 三个类
+    5. api 模块合并为单个文件, 添加了请求生成与响应处理的 api_request_builder 模块
+    6. 新的架构避免了 api 注册冗余以及 api 与 session 的交叉调用, 简化模型, 增加了灵活性, 并且不改变之前使用 session 调用接口的方式
+    7. 修改了 get_stu_info 中照片地址的生成方式
+
+- 20160208 v0.3.5
+    1. 修复 AuthSession 初始化时的逻辑错误
+    2. 修改缓存 md5 计算方式
+    3. 兼容 Python 3.X
+
 - 20151030 v0.3.4
     1. 添加 MANIFEST.in
     2. 提交到了官方仓库

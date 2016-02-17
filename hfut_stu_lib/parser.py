@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
-from __future__ import unicode_literals
+from __future__ import unicode_literals, division
+from .logger import hfut_stu_lib_logger as logger
 
 
 def parse_tr_strs(trs):
@@ -26,7 +27,23 @@ def parse_tr_strs(trs):
                 strs.append(None)
             else:
                 msg = 'td标签中含有多个字符串\n{:s}'.format(td)
-                print s_list
+                logger.error(s_list)
                 raise ValueError(msg)
         tr_strs.append(strs)
     return tr_strs
+
+
+def flatten_list(multiply_list):
+    """
+    碾平 list
+    >>> a = [1, 2, [3, 4], [[5, 6], [7, 8]]]
+    >>> flatten_list(a)
+    [1, 2, 3, 4, 5, 6, 7, 8]
+
+    :param multiply_list: 混淆的多层列表
+    :return: 单层的 list
+    """
+    if isinstance(multiply_list, list):
+        return [rv for l in multiply_list for rv in flatten_list(l)]
+    else:
+        return [multiply_list]

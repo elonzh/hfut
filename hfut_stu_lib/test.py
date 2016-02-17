@@ -1,13 +1,13 @@
 # -*- coding:utf-8 -*-
-from __future__ import unicode_literals
+from __future__ import unicode_literals, division
 
 import logging
 import unittest
+import six
+import os
 
-from hfut_stu_lib import g, AuthSession, hfut_stu_lib_logger, STUDENT
-from hfut_stu_lib.cache import MemoryCache, FileCache
-from hfut_stu_lib.core import register_api
-from hfut_stu_lib.util import get_point, cal_gpa, cal_cache_md5
+from hfut_stu_lib import AuthSession, hfut_stu_lib_logger, STUDENT
+from hfut_stu_lib.util import get_point, cal_gpa
 
 
 class BaseTest(unittest.TestCase):
@@ -15,7 +15,11 @@ class BaseTest(unittest.TestCase):
 
     def assertEveryKeys(self, seq, keys):
         keys.sort()
-        map(lambda v: self.assertSequenceEqual(sorted(v.keys()), keys), seq)
+        map(lambda v: self.assertListEqual(sorted(six.iterkeys(v)), keys), seq)
+
+    def assertDictKeys(self, d, keys):
+        keys.sort()
+        self.assertListEqual(sorted(six.iterkeys(d)), keys)
 
 
 class AuthSessionTest(BaseTest):
@@ -29,20 +33,17 @@ class GuestTest(BaseTest):
 
     def test_get_class_students(self):
         keys = ['学期', '班级名称', '学生']
-        keys.sort()
-        res = self.session.get_class_students('028', '0400073B', '0001')
+        res = self.session.get_class_students('025', '0400073B', '0001')
         self.assertIsNone(res)
         res = self.session.get_class_students('026', '0400073B', '0001')
-        res_keys = res.keys()
-        res_keys.sort()
-        self.assertSequenceEqual(res_keys, keys)
+        self.assertDictKeys(res, keys)
         self.assertEqual(len(res['学生']), 45)
 
     def test_get_class_info(self):
-        keys = sorted(['时间地点', '开课单位', '禁选范围', '考核类型', '性别限制', '教学班号', '课程名称', '优选范围', '备 注',
-                       '学分', '课程类型', '校区', '选中人数', '起止周'])
+        keys = ['时间地点', '开课单位', '禁选范围', '考核类型', '性别限制', '教学班号', '课程名称', '优选范围', '备 注',
+                '学分', '课程类型', '校区', '选中人数', '起止周']
         res = self.session.get_class_info('026', '0400073B', '0001')
-        self.assertEqual(sorted(res.keys()), keys)
+        self.assertDictKeys(res, keys)
 
     def test_search_lessons(self):
         # todo: search_lessons 未完成, 待补充测试用例
@@ -65,14 +66,14 @@ class GuestTest(BaseTest):
         keys = ['教研室', '教学课程', '学历', '教龄', '教师寄语', '简 历', '照片', '科研方向', '出生', '姓名',
                 '联系电话', '职称', '电子邮件', '性别', '学位', '院系']
         res = self.session.get_teacher_info('12000198')
-        self.assertEqual(res.keys(), keys)
+        self.assertDictKeys(res, keys)
 
     def test_get_lesson_classes(self):
         keys = ['优选范围', '教师', '教学班号']
-        detail_keys = ['教师', '开课单位', '课程类型', '教学班号', '校区', '禁选范围', '时间地点', '性别限制',
-                       '课程名称', '优选范围', '备 注', '学分', '考核类型', '选中人数', '起止周']
         self.assertEveryKeys(self.session.get_lesson_classes('0521290X'), keys)
-        self.assertEveryKeys(self.session.get_lesson_classes('0521290X', detail=True), detail_keys)
+        # detail_keys = ['教师', '开课单位', '课程类型', '教学班号', '校区', '禁选范围', '时间地点', '性别限制',
+        #                '课程名称', '优选范围', '备 注', '学分', '考核类型', '选中人数', '起止周']
+        # self.assertEveryKeys(self.session.get_lesson_classes('0521290X', detail=True), detail_keys)
 
 
 class StudentTest(BaseTest):
@@ -86,7 +87,7 @@ class StudentTest(BaseTest):
                 '入学方式', '照片', '联系电话', '姓名', '入学时间', '籍贯', '民族', '学号', '家庭电话', '生源地',
                 '出生日期', '学籍状态', '身份证号', '考生号', '班级简称', '注册状态']
         res = self.session.get_stu_info()
-        self.assertEqual(res.keys(), keys)
+        self.assertDictKeys(res, keys)
 
     def test_get_stu_grades(self):
         keys = ['教学班号', '课程名称', '学期', '补考成绩', '课程代码', '学分', '成绩']
@@ -97,8 +98,6 @@ class StudentTest(BaseTest):
         res = self.session.get_stu_timetable()
         self.assertEqual(len(res), 7)
         map(lambda v: self.assertEqual(len(v), 11), res)
-        res = self.session.get_stu_timetable(detail=True)
-        self.assertEqual(len(res), 7)
 
     def test_get_stu_feeds(self):
         keys = ['教学班号', '课程名称', '学期', '收费(元)', '课程代码', '学分']
@@ -142,7 +141,8 @@ class StudentTest(BaseTest):
     def test_is_lesson_selected(self):
         self.assertFalse(self.session.is_lesson_selected('1234567'))
         self.assertFalse(self.session.is_lesson_selected('0700052B'))
-        self.assertTrue(self.session.is_lesson_selected('0532232B'))
+        # self.assertTrue(self.session.is_lesson_selected('0532232B'))
+        self.assertTrue(self.session.is_lesson_selected('1201061B'))
 
     def test_select_lesson(self):
         # todo: 待补充 select_lesson 测试用例
@@ -181,58 +181,3 @@ class UtilTest(BaseTest):
 
     def test_cal_gpa(self):
         self.assertIsInstance(cal_gpa(self.session.get_stu_grades()), tuple)
-
-    def test_cal_cache_md5(self):
-        api_info = g.registered_api['get_code']
-        cache_md5 = cal_cache_md5(api_info['func'], self.session, is_public=True)
-        self.assertEqual(cache_md5, str('8eb7e6cab5a0613b808e5be975404fea'))
-
-
-class CoreTest(BaseTest):
-    def test_register_api(self):
-        session = AuthSession()
-        self.assertRaises(TypeError, session.get_code)
-
-        def get_code():
-            pass
-
-        self.assertRaises(NameError, lambda: register_api('')(get_code))
-
-
-class CacheTest(BaseTest):
-    session = AuthSession('2013217413', '1234567', STUDENT)
-
-    def setUp(self):
-        if isinstance(g.current_cache_manager, FileCache):
-            g.current_cache_manager.drop()
-        g.current_cache_manager = None
-
-    def tearDown(self):
-        self.setUp()
-
-    def testSingleton(self):
-        self.assertIsNone(g.current_cache_manager)
-        mc = MemoryCache()
-        self.assertIs(g.current_cache_manager, mc)
-        mc2 = MemoryCache()
-        self.assertIs(mc2, mc)
-        FileCache('test')
-        self.assertIs(g.current_cache_manager, mc)
-
-    def testMemoryCache(self):
-        cache_md5 = str('8eb7e6cab5a0613b808e5be975404fea')
-        mc = MemoryCache()
-        self.assertIsNone(mc.get(cache_md5))
-        rv = self.session.get_code()
-        self.assertEqual(rv, mc.get(cache_md5))
-        mc.delete(cache_md5)
-        self.assertIsNone(mc.get(cache_md5))
-
-    def testFileCache(self):
-        cache_md5 = str('8eb7e6cab5a0613b808e5be975404fea')
-        fc = FileCache()
-        self.assertIsNone(fc.get(cache_md5))
-        rv = self.session.get_code()
-        self.assertEqual(rv, fc.get(cache_md5))
-        fc.delete(cache_md5)
-        self.assertIsNone(fc.get(cache_md5))
