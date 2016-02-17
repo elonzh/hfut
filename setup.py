@@ -4,8 +4,8 @@ from __future__ import unicode_literals
 from setuptools import setup, find_packages
 import hfut_stu_lib
 
-with open('README.rst', encoding='utf-8') as fp:
-    long_description = fp.read()
+with open('README.rst', 'rb') as fp:
+    long_description = fp.read().decode()
 
 
 with open('requirements.txt') as fp:
