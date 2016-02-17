@@ -2,7 +2,7 @@
 from __future__ import unicode_literals, division
 
 __title__ = 'hfut_stu_lib'
-__version__ = '0.3.4'
+__version__ = '0.4.0'
 __author__ = 'erliang'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2015 erliang'
