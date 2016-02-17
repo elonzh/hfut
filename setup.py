@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 import hfut_stu_lib
 
 with open('README.rst', 'rb') as fp:
-    long_description = fp.read().decode()
+    long_description = fp.read().decode('utf-8')
 
 
 with open('requirements.txt') as fp:
