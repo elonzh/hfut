@@ -3,16 +3,16 @@
 核心的请求对象构造类, 使用原始参数获取响应并解析出结果
 """
 from __future__ import unicode_literals, print_function, division
+
 import re
-from pprint import pprint
 
 import six
 from bs4 import SoupStrainer, BeautifulSoup
 
-from .parser import parse_tr_strs, flatten_list
 from .const import GET, POST, GUEST, STUDENT, SITE_ENCODING, HTML_PARSER
-from .model import APIRequestBuilder, APIResult
 from .logger import hfut_stu_lib_logger
+from .model import APIRequestBuilder, APIResult
+from .parser import parse_tr_strs, flatten_list
 
 
 class GetClassStudent(APIRequestBuilder):
@@ -138,7 +138,7 @@ class SearchLessons(APIRequestBuilder):
                 lessons.append(lesson)
             return APIResult(response, lessons)
         else:
-            hfut_stu_lib_logger.warning('没有找到结果\n {:s}'.format(self.data))
+            hfut_stu_lib_logger.warning('没有找到结果\n %s', self.data)
             return APIResult(response)
 
 
@@ -342,9 +342,7 @@ class GetStuTimetable(APIRequestBuilder):
 
         def parse_lesson(lesson):
             # todo:课程时间还有特殊情况, 例如形势政策, 应完善正则
-            """
-            解析课程单元格
-            """
+            # 解析课程单元格
             if lesson is None:
                 return None
 
@@ -413,12 +411,6 @@ class ChangePassword(APIRequestBuilder):
                      'new2pwd': new2pwd}
 
     def after_response(self, response, *args, **kwargs):
-        """
-        修改密码
-        :param oldpwd: 旧密码
-        :param newpwd: 新密码
-        :param new2pwd: 重复新密码
-        """
         page = response.text
         ss = SoupStrainer('table', width='580', border='0', cellspacing='1', bgcolor='#000000')
         bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
@@ -426,8 +418,8 @@ class ChangePassword(APIRequestBuilder):
         if res == '密码修改成功！':
             return APIResult(response, True)
         else:
-            hfut_stu_lib_logger.warning('密码修改失败\noldpwd: {:s}\nnewpwd: {:s}\nnew2pwd: {:s}\ntext: {:s}'.format(
-                self.oldpwd, self.newpwd, self.new2pwd, res))
+            hfut_stu_lib_logger.warning('密码修改失败\noldpwd: %s\nnewpwd: %s\nnew2pwd: %s\ntext: %s',
+                                        self.oldpwd, self.newpwd, self.new2pwd, res)
             return APIResult(response, False)
 
 
@@ -494,9 +486,6 @@ class GetSelectedLessons(APIRequestBuilder):
     allow_redirects = False
 
     def after_response(self, response, *args, **kwargs):
-        """
-        获取已选课程
-        """
         page = response.text
         ss = SoupStrainer('table', id='TableXKJG')
         bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
@@ -535,8 +524,8 @@ class SelectLesson(APIRequestBuilder):
                            r'课程代码：\s*([\dbBxX]+)[\s;&nbsp]*教学班号：\s*(\d{4})', re.DOTALL)
             r = p.findall(page)
             if not r:
-                hfut_stu_lib_logger.warning('正则没有匹配到结果，可能出现了一些状况\n{:s}'.format(page))
-                return None
+                hfut_stu_lib_logger.warning('正则没有匹配到结果，可能出现了一些状况\n%s', page)
+                return APIResult(response)
             results = []
             for g in r:
                 hfut_stu_lib_logger.info(' '.join(g))
@@ -572,8 +561,8 @@ class DeleteLesson(APIRequestBuilder):
                            re.DOTALL)
             r = p.findall(page)
             if not r:
-                hfut_stu_lib_logger.warning('正则没有匹配到结果，可能出现了一些状况\n{:s}'.format(page))
-                return None
+                hfut_stu_lib_logger.warning('正则没有匹配到结果，可能出现了一些状况\n%s', page)
+                return APIResult(response)
             results = []
             for g in r:
                 hfut_stu_lib_logger.info(' '.join(g))

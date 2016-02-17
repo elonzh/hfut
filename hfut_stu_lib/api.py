@@ -4,8 +4,16 @@
 """
 from __future__ import unicode_literals, print_function, division
 
+import re
+
+import six
+
+from .api_request_builder import (GetClassStudent, GetClassInfo, SearchLessons, GetTeachingPlan, GetTeacherInfo,
+                                  GetLessonClasses, GetCode, GetStuInfo, GetStuGrades, GetStuTimetable, GetStuFeeds,
+                                  ChangePassword, SetTelephone, GetOptionalLessons, GetSelectedLessons, SelectLesson,
+                                  DeleteLesson)
 from .core import register_api, unfinished, unstable
-from .api_request_builder import *
+from .logger import hfut_stu_lib_logger
 
 __all__ = ['get_class_students', 'get_class_info', 'search_lessons', 'get_teaching_plan', 'get_teacher_info',
            'get_lesson_classes'].extend(
@@ -76,6 +84,13 @@ def get_stu_feeds(auth_session):
 
 @register_api
 def change_password(auth_session, oldpwd, newpwd, new2pwd):
+    """
+    修改密码
+    :param auth_session: AuthSession 对象
+    :param oldpwd: 旧密码
+    :param newpwd: 新密码
+    :param new2pwd: 重复新密码
+    """
     p = re.compile(r'^[\da-z]{6,12}$')
     # 若不满足密码修改条件便不做请求
     if oldpwd != auth_session.password or newpwd != new2pwd or not p.match(newpwd):
@@ -147,11 +162,11 @@ def select_lesson(auth_session, kvs):
         if kcdm not in kcdms:
             kcdms.add(kcdm)
             if is_lesson_selected(auth_session, kcdm):
-                hfut_stu_lib_logger.warning('课程 {:s} 你已经选过了'.format(kcdm))
+                hfut_stu_lib_logger.warning('课程 %s 你已经选过了', kcdm)
             else:
                 if not jxbhs:
                     if is_lesson_selected(auth_session, kcdm):
-                        hfut_stu_lib_logger.warning('你已经选了课程 {:s}, 如果你要选课的话, 请勿选取此课程代码'.format(kcdm))
+                        hfut_stu_lib_logger.warning('你已经选了课程 %s, 如果你要选课的话, 请勿选取此课程代码', kcdm)
                     teaching_classes = get_lesson_classes(auth_session, kcdm)
                     for klass in teaching_classes:
                         kcdms_data.append(kcdm)

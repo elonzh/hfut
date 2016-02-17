@@ -3,8 +3,8 @@ from __future__ import unicode_literals, division
 
 import logging
 import unittest
+
 import six
-import os
 
 from hfut_stu_lib import AuthSession, hfut_stu_lib_logger, STUDENT
 from hfut_stu_lib.util import get_point, cal_gpa

@@ -1,12 +1,14 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals, print_function, division
+
 import json
 import requests
 import six
+
 from pprint import pformat
 
-from .hooks import response_encoding
 from .const import HOST_URL
+from .hooks import response_encoding
 
 
 class APIRequestBuilder(object):
@@ -37,10 +39,22 @@ class APIRequestBuilder(object):
     hooks = None
 
     def after_response(self, response, *args, **kwargs):
+        """
+        :param response: requests.Response
+        :type response: requests.Response
+        :param args: hook args
+        :param kwargs: hook kwargs
+        :return: APIResult
+        :rtype: APIResult
+        """
         raise NotImplementedError('必须实现 after_response !')
 
     @property
     def api_req_obj_args(self):
+        """
+        :return: api_req_obj_args
+        :rtype: dict
+        """
         all_attrs = ('method', 'url', 'headers', 'files', 'data', 'params', 'auth', 'cookies', 'hooks', 'json',
                      'proxies', 'stream', 'verify', 'cert',
                      'timeout', 'allow_redirects')
@@ -53,6 +67,10 @@ class APIRequestBuilder(object):
         return kwargs
 
     def gen_api_req_obj(self):
+        """
+        :return: api_req_obj
+        :rtype: APIResult
+        """
         kwargs = self.api_req_obj_args
         return APIRequest(**kwargs)
 
@@ -69,7 +87,7 @@ class APIRequest(requests.Request):
         super(APIRequest, self).__init__(**request_kwargs)
 
     def __repr__(self):
-        return '<APIRequest [{method:s}] {url:s}>'.format(self.method, self.url)
+        return '<APIRequest [{:s}] {:s}>'.format(self.method, self.url)
 
 
 class APIResult(object):
