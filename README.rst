@@ -2,17 +2,21 @@
 hfut-stu-lib
 ############
 
+*******
+开发状态
+*******
+
 .. image:: https://badge.fury.io/py/hfut_stu_lib.svg
-:target: http://badge.fury.io/py/hfut_stu_lib
+    :target: http://badge.fury.io/py/hfut_stu_lib
 
 .. image:: https://travis-ci.org/er1iang/hfut-stu-lib.svg?branch#dev
-:target: https://travis-ci.org/er1iang/hfut-stu-lib
+    :target: https://travis-ci.org/er1iang/hfut-stu-lib
 
 .. image:: https://landscape.io/github/er1iang/hfut-stu-lib/dev/landscape.svg?style#flat
-:target: https://landscape.io/github/er1iang/hfut-stu-lib/dev
+    :target: https://landscape.io/github/er1iang/hfut-stu-lib/dev
 
 .. image:: https://coveralls.io/repos/er1iang/hfut-stu-lib/badge.svg?branch#dev&service#github
-:target: https://coveralls.io/github/er1iang/hfut-stu-lib?branch#dev
+    :target: https://coveralls.io/github/er1iang/hfut-stu-lib?branch#dev
 
 -----
 
