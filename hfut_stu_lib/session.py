@@ -6,6 +6,7 @@ import six
 
 from .const import HOST_URL, USER_TYPES, GUEST
 from .core import all_api
+from .log import logger
 
 
 class AuthSessionMeta(type):
@@ -15,6 +16,7 @@ class AuthSessionMeta(type):
         return type.__new__(mcs, name, bases, attrs)
 
 
+@six.python_2_unicode_compatible
 @six.add_metaclass(AuthSessionMeta)
 class AuthSession(requests.Session):
 
@@ -30,7 +32,7 @@ class AuthSession(requests.Session):
         # self.hooks = dict(response=response_encoding)
         self.login()
 
-    def __repr__(self):
+    def __str__(self):
         return '<AuthSession for {account} ({user_type})>'.format(account=self.account, user_type=self.user_type)
 
     def login(self):
@@ -55,5 +57,5 @@ class AuthSession(requests.Session):
             'allow_redirects': api_req_obj.allow_redirects,
         }
         send_kwargs.update(settings)
-
+        logger.debug('%s was sent', api_req_obj)
         return self.send(prep, **send_kwargs)

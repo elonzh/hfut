@@ -9,8 +9,8 @@ import re
 import six
 from bs4 import SoupStrainer, BeautifulSoup
 
-from .const import GET, POST, GUEST, STUDENT, SITE_ENCODING, HTML_PARSER
-from .logger import hfut_stu_lib_logger
+from .const import GET, POST, GUEST, STUDENT, HTML_PARSER
+from .log import logger
 from .model import APIRequestBuilder, APIResult
 from .parser import parse_tr_strs, flatten_list
 
@@ -29,7 +29,7 @@ class GetClassStudent(APIRequestBuilder):
         :param jxbh: 教学班号
         """
         self.params = {'xqdm': xqdm,
-                       'kcdm': kcdm,
+                       'kcdm': kcdm.upper(),
                        'jxbh': jxbh}
 
     def after_response(self, response, *args, **kwargs):
@@ -46,11 +46,11 @@ class GetClassStudent(APIRequestBuilder):
             stus = [{'序号': v[0], '学号': v[1], '姓名': v[2]} for v in stus]
             return APIResult(response, {'学期': term.group(), '班级名称': class_name.group(), '学生': stus})
         elif page.find('无此教学班') != -1:
-            hfut_stu_lib_logger.warning('无此教学班, 请检查你的参数')
+            logger.warning('无此教学班, 请检查你的参数')
             return APIResult(response)
         else:
             msg = '\n'.join(['没有匹配到信息, 可能出现了一些问题', page])
-            hfut_stu_lib_logger.error(msg)
+            logger.error(msg)
             raise ValueError(msg)
 
 
@@ -69,7 +69,7 @@ class GetClassInfo(APIRequestBuilder):
         :param jxbh: 教学班号
         """
         self.params = {'xqdm': xqdm,
-                       'kcdm': kcdm,
+                       'kcdm': kcdm.upper(),
                        'jxbh': jxbh}
 
     def after_response(self, response, *args, **kwargs):
@@ -117,7 +117,7 @@ class SearchLessons(APIRequestBuilder):
         if kcdm is None and kcmc is None:
             raise ValueError('kcdm 和 kcdm 参数必须至少存在一个')
         self.data = {'xqdm': xqdm,
-                     'kcdm': kcdm,
+                     'kcdm': kcdm.upper() if kcdm else None,
                      'kcmc': kcmc}
 
     def after_response(self, response, *args, **kwargs):
@@ -138,7 +138,7 @@ class SearchLessons(APIRequestBuilder):
                 lessons.append(lesson)
             return APIResult(response, lessons)
         else:
-            hfut_stu_lib_logger.warning('没有找到结果\n %s', self.data)
+            logger.warning('没有找到结果\n %s', self.data)
             return APIResult(response)
 
 
@@ -212,38 +212,56 @@ class GetLessonClasses(APIRequestBuilder):
     user_type = GUEST
 
     method = GET
-    url = 'student/asp/select_topRight.asp'
+    # url = 'student/asp/select_topRight.asp'
+    url = 'student/asp/select_topRight_f3.asp'
 
     def __init__(self, kcdm):
         """
         获取选课系统中课程的可选教学班级
         :param kcdm:课程代码
         """
-        self.params = {'kcdm': kcdm}
+        self.params = {'kcdm': kcdm.upper()}
 
     def after_response(self, response, *args, **kwargs):
         page = response.text
-        ss = SoupStrainer('table', id='JXBTable')
+        ss = SoupStrainer('body')
         bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
-        trs = bs.find_all('tr')
+        class_table = bs.select_one('#JXBTable')
+        if class_table.get_text(strip=True) == '对不起！该课程没有可被选的教学班。':
+            return APIResult(response, None)
+
+        result = dict()
+        _, result['课程代码'], result['课程名称'] = bs.select_one('#KcdmTable').stripped_strings
+        result['课程代码'] = result['课程代码'].upper()
+        trs = class_table.find_all('tr')
 
         lesson_classes = []
         for tr in trs:
-            klass = {}
             tds = tr.find_all('td')
             assert len(tds) == 5
-            klass['教学班号'] = tds[1].string.strip()
-            klass['教师'] = tds[2].text.strip()
-            klass['优选范围'] = tds[3].text.strip()
 
-            # if detail:
-            #     href = tds[1].a['href']
-            #     # 匹配当前的学期代码
-            #     xqdm = re.search(r"(?<=,')\d{3}(?='\))", href).group()
-            #     klass.update(get_class_info(xqdm, kcdm, klass['教学班号']))
+            # 解析隐含在 alt 属性中的信息
+            class_info_table = BeautifulSoup(tds[1]['alt'], HTML_PARSER)
+            info_trs = class_info_table.select('tr')
+            # 校区 起止周 考核类型 禁选专业
+            cls_info = dict(zip(info_trs[0].stripped_strings, parse_tr_strs([info_trs[1]])))
+            # 选中人数 课程容量
+            for s in info_trs[2].stripped_strings:
+                kv = [v.strip() for v in s.split(':')]
+                cls_info[kv[0]] = int(kv[1]) if kv[1] else None
+            cls_info.update([(v.strip() or None for v in s.split('：')) for s in info_trs[5].stripped_strings])
+            # 开课时间,开课地点
+            p = re.compile(r'周[一二三四五六日]:\(\d+-\d+节\) \(\d+-\d+周\).+?\d+')
+            cls_info[info_trs[3].get_text(strip=True)] = p.findall(info_trs[4].get_text(strip=True))
 
-            lesson_classes.append(klass)
-        return APIResult(response, lesson_classes)
+            cls_info['教学班号'] = tds[1].string.strip()
+            cls_info['教师'] = [s.strip() for s in tds[2].text.split(',')]
+            cls_info['优选范围'] = [s.strip() for s in tds[3].text.split(',')]
+
+            lesson_classes.append(cls_info)
+
+        result['可选班级'] = lesson_classes
+        return APIResult(response, result)
 
 
 class GetCode(APIRequestBuilder):
@@ -418,8 +436,8 @@ class ChangePassword(APIRequestBuilder):
         if res == '密码修改成功！':
             return APIResult(response, True)
         else:
-            hfut_stu_lib_logger.warning('密码修改失败\noldpwd: %s\nnewpwd: %s\nnew2pwd: %s\ntext: %s',
-                                        self.oldpwd, self.newpwd, self.new2pwd, res)
+            logger.warning('密码修改失败\noldpwd: %s\nnewpwd: %s\nnew2pwd: %s\ntext: %s',
+                           self.oldpwd, self.newpwd, self.new2pwd, res)
             return APIResult(response, False)
 
 
@@ -448,7 +466,8 @@ class GetOptionalLessons(APIRequestBuilder):
     user_type = STUDENT
 
     method = GET
-    url = 'student/asp/select_topLeft.asp'
+    # url = 'student/asp/select_topLeft.asp'
+    url = 'student/asp/select_topLeft_f3.asp'
     allow_redirects = False
 
     def __init__(self, kclx='x'):
@@ -500,7 +519,7 @@ class GetSelectedLessons(APIRequestBuilder):
         return APIResult(response, lessons)
 
 
-class SelectLesson(APIRequestBuilder):
+class ChangeLesson(APIRequestBuilder):
     user_type = STUDENT
 
     method = POST
@@ -514,59 +533,21 @@ class SelectLesson(APIRequestBuilder):
     def after_response(self, response, *args, **kwargs):
         if response.status_code == 302:
             msg = '提交选课失败, 可能是身份验证过期或选课系统已关闭'
-            hfut_stu_lib_logger.error(msg)
+            logger.error(msg)
             raise ValueError(msg)
         else:
             page = response.text
             # 当选择同意课程的多个教学班时, 若已选中某个教学班, 再选择其他班数据库会出错,
             # 其他一些不可预料的原因也会导致数据库出错
-            p = re.compile(r'(成功提交选课数据|容量已满,请选择其他教学班).+?'
+            p = re.compile(r'(成功提交选课数据|容量已满,请选择其他教学班|已成功删除下列选课数据).+?'
                            r'课程代码：\s*([\dbBxX]+)[\s;&nbsp]*教学班号：\s*(\d{4})', re.DOTALL)
             r = p.findall(page)
             if not r:
-                hfut_stu_lib_logger.warning('正则没有匹配到结果，可能出现了一些状况\n%s', page)
+                logger.warning('正则没有匹配到结果, 可能出现了一些状况')
                 return APIResult(response)
             results = []
             for g in r:
-                hfut_stu_lib_logger.info(' '.join(g))
-                msg, kcdm, jxbh = g
-                if msg == '成功提交选课数据':
-                    result = {'课程代码': kcdm.upper(), '教学班号': jxbh}
-                    results.append(result)
-            return APIResult(response, results)
-
-
-class DeleteLesson(APIRequestBuilder):
-    # todo: 请求的地址和参数形式是一致的， 需要与 SelectLesson 合并
-    user_type = STUDENT
-
-    method = POST
-    url = 'student/asp/selectKC_submit_f3.asp'
-
-    allow_redirects = False
-
-    def __init__(self, xh, kcdm, jxbh):
-        self.data = {'xh': xh, 'kcdm': kcdm, 'jxbh': jxbh}
-
-    def after_response(self, response, *args, **kwargs):
-        if response.status_code == 302:
-            msg = '课程删除失败, 可能是身份验证过期或选课系统已关闭'
-            hfut_stu_lib_logger.error(msg)
-            raise ValueError(msg)
-        else:
-            page = response.content.decode(SITE_ENCODING)
-            # 当选择同意课程的多个教学班时, 若已选中某个教学班, 再选择其他班数据库会出错,
-            # 其他一些不可预料的原因也会导致数据库出错
-            p = re.compile(r'(已成功删除下列选课数据).+?课程代码：\s*([\dbBxX]+)[\s;&nbsp]*教学班号：\s*(\d{4})',
-                           re.DOTALL)
-            r = p.findall(page)
-            if not r:
-                hfut_stu_lib_logger.warning('正则没有匹配到结果，可能出现了一些状况\n%s', page)
-                return APIResult(response)
-            results = []
-            for g in r:
-                hfut_stu_lib_logger.info(' '.join(g))
-                msg, kcdm, jxbh = g
-                result = {'课程代码': kcdm.upper(), '教学班号': jxbh}
+                logger.info(' '.join(g))
+                result = dict(msg=g[0], kcdm=g[1], jxbh=g[2])
                 results.append(result)
             return APIResult(response, results)

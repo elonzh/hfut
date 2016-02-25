@@ -1,3 +1,12 @@
+- 20160225 v0.5.0
+    1. 重构 `api_request_builder.GetLessonClasses`, 现在可以返回课程已选人数, 课程容量, 时间地点等信息, 同时修复了一些问题
+    2. 添加 `api.get_lessons_can_be_selected`, 获取可以选上的课程教学班级
+    3. 合并 `api.select_lesson` 和 `api.delete_lesson` 为 `api.change_lesson` 并重构了逻辑
+    4. 修改 `api.is_lesson_selected` 参数类型为 list, 避免使用中重复调用导致发送大量冗余的请求
+    5. 重构 `parser.parse_tr_strs` , 现在支持单个值输入输出
+    6. 添加 `parser.dict_list_2_tuple_set`
+    7. 提升兼容性
+
 - 20160218 v0.4.2
     1. 修复由于配置遗漏导致无法安装的问题
 
@@ -7,15 +16,15 @@
 
 - 20160216 v0.4.0
     1. 删除缓存模块及相关接口
-    2. 分离一般接口与请求接口, 去除了 g 对象, 只使用列表 all_api 保存注册的一般接口
-    3. 将 AuthSession.catch_response 删除, 改用 AuthSession.api_request
-    4. 新增了 model 模块, 包含 APIRequestBuilder, APIRequest, APIResult 三个类
-    5. api 模块合并为单个文件, 添加了请求生成与响应处理的 api_request_builder 模块
-    6. 新的架构避免了 api 注册冗余以及 api 与 session 的交叉调用, 简化模型, 增加了灵活性, 并且不改变之前使用 session 调用接口的方式
-    7. 修改了 get_stu_info 中照片地址的生成方式
+    2. 分离一般接口与请求接口, 去除了 `g` 对象, 只使用列表 `all_api` 保存注册的一般接口
+    3. 将 `AuthSession.catch_response` 删除, 改用 `AuthSession.api_request`
+    4. 新增了 `model` 模块, 包含 `model.APIRequestBuilder`, `model.APIRequest`, `model.APIResult` 三个类
+    5. api 模块合并为单个文件, 添加了请求生成与响应处理的 `api_request_builder` 模块
+    6. 新的架构避免了 `api` 注册冗余以及 `api` 与 `session` 的交叉调用, 简化模型, 增加了灵活性, 并且不改变之前使用 session 调用接口的方式
+    7. 修改了 `api.get_stu_info` 中照片地址的生成方式
 
 - 20160208 v0.3.5
-    1. 修复 AuthSession 初始化时的逻辑错误
+    1. 修复 `session.AuthSession` 初始化时的逻辑错误
     2. 修改缓存 md5 计算方式
     3. 兼容 Python 3.X
 
@@ -32,25 +41,25 @@
     2. 修复 anydbm 在不同环境下触发的 AttributeError: get
     
 - 20151030 v0.3.1
-    1. 修复接口注册前后的参数差异导致 cal_cache_md5 计算结果不正确的问题
+    1. 修复接口注册前后的参数差异导致 `cal_cache_md5` 计算结果不正确的问题
     2. 添加了更多的测试用例
     
 - 20151029 v0.3.0
-    1. 修改 regist_api 为 register_api
+    1. 修改 `regist_api` 为 `register_api`
     2. 默认在安装uniout的情况下使用其输出unicode内容方便使用
     3. 改用元类来绑定接口, 提升声明对象时的效率
-    4. 预定义了用户类型, user_type 参数使用预定义变量
-    5. cal_gpa 精度改为5位小数, 与学校一致
-    6. 添加缓存功能, 你可以通过一个全局的缓存管理对象管理缓存了, 模块内置了 MemoryCache 和 FileCache, 当然你也可以继承 BaseCache 编写新的缓存管理对象, 模块会自动帮你注册
+    4. 预定义了用户类型, `user_type` 参数使用预定义变量
+    5. `cal_gpa` 精度改为5位小数, 与学校一致
+    6. 添加缓存功能, 你可以通过一个全局的缓存管理对象管理缓存了, 模块内置了 `MemoryCache` 和 `FileCache`, 当然你也可以继承 `BaseCache` 编写新的缓存管理对象, 模块会自动帮你注册
     
 - 20151025 v0.2.0
     1. 调整了模块结构
-    2. 分离了 session 与 接口, 通过一个统一的 AuthSession 自动绑定接口, 参数原来 StuLib 接口参数相同
+    2. 分离了 `session` 与 接口, 通过一个统一的 `AuthSession` 自动绑定接口, 参数原来 `StuLib` 接口参数相同
     3. 区分了用户类型, AuthSession 即使没有登录也能访问公共接口了
-    4. 添加了 regist_api , 现在你可以在不修改模块代码的情况下添加自己的接口了
+    4. 添加了 `regist_api` , 现在你可以在不修改模块代码的情况下添加自己的接口了
 
 - 20150912 v0.1.3
-    1. 修复因 StuLib 初始化时未对 stu_id 进行类型转换而导致 StuLib.get_stu_info 出错的问题
+    1. 修复因 `StuLib` 初始化时未对 `stu_id` 进行类型转换而导致 `StuLib.get_stu_info` 出错的问题
     
 - 20150912 v0.1.2
     1. 修复安装时 README.md 缺失的问题
@@ -59,28 +68,28 @@
     1. 添加了一些单元测试
     
 - 20150911 v0.1.0
-    1. 解决 requests 不能对 GBK 转 UTF8 无损转换的问题
-    2. 添加 StuLib.catch_response , 抽象了响应的获取, 提升了代码的可维护性
+    1. 解决 `requests` 不能对 GBK 转 UTF8 无损转换的问题
+    2. 添加 `StuLib.catch_response` , 抽象了响应的获取, 提升了代码的可维护性
 
 - 20150910 v0.0.4
-    1. 修复了 StuLib.get_class_student 中由于教务网页代码严重的错误导致页面无法解析而不可用的问题
-    2. 添加了 StuLib.get_class_student 的测试用例
-    3. 由于 requests 返回的的网页无法做到无损转码, 将传递 BeautifulSoup 的文档改为原始编码文档,将转码工作交给 BeautifulSoup 处理, 但用到正则匹配的方法还存在此问题
+    1. 修复了 `StuLib.get_class_student` 中由于教务网页代码严重的错误导致页面无法解析而不可用的问题
+    2. 添加了 `StuLib.get_class_student` 的测试用例
+    3. 由于 `requests` 返回的的网页无法做到无损转码, 将传递 `BeautifulSoup` 的文档改为原始编码文档,将转码工作交给 `BeautifulSoup` 处理, 但用到正则匹配的方法还存在此问题
 
 - 20150909 v0.0.3
     1. 统一将返回的课程代码进行大写转换, 避免因学校课程代码大小写的不统一产生不可预料的问题
-    2. 重构了 StuLib.select_lesson , 现在支持更好地批量选课以及更好地结果处理过程
-    3. 重构了 StuLib.delete_lesson , 现在支持批量删课以及更好地结果处理过程
+    2. 重构了 `StuLib.select_lesson` , 现在支持更好地批量选课以及更好地结果处理过程
+    3. 重构了 `StuLib.delete_lesson` , 现在支持批量删课以及更好地结果处理过程
 
 - 20150903 v0.0.2
-    1. 重构了 StuLib.select_lesson 的参数处理过程, 由于第二次选课结束暂时没有完成对提交结果的处理
+    1. 重构了 `StuLib.select_lesson` 的参数处理过程, 由于第二次选课结束暂时没有完成对提交结果的处理
     2. 添加 Travis IC 持续集成工具
 
 - 20150902 v0.0.1
-    1. 修复 StuLib.get_class_info 出错
-    2. 添加 教师信息查询（StuLib.get_teacher_info） 功能
-    3. 将 StuLib.get_url 的 code 修改为对应的方法名称
-    4. 修复 StuLib.change_password 正则匹配不完整的问题
-    5. 修复 StuLib.set_telephone 正则匹配不完整的问题
+    1. 修复 `StuLib.get_class_info` 出错
+    2. 添加 教师信息查询（`StuLib.get_teacher_info`） 功能
+    3. 将 `StuLib.get_url` 的 `code` 修改为对应的方法名称
+    4. 修复 `StuLib.change_password` 正则匹配不完整的问题
+    5. 修复 `StuLib.set_telephone` 正则匹配不完整的问题
     6. 添加部分单元测试
     7. 调整了包的结构

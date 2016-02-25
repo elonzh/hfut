@@ -4,16 +4,16 @@
 """
 from __future__ import unicode_literals, print_function, division
 
-import re
-
 import six
+import json
+import re
 
 from .api_request_builder import (GetClassStudent, GetClassInfo, SearchLessons, GetTeachingPlan, GetTeacherInfo,
                                   GetLessonClasses, GetCode, GetStuInfo, GetStuGrades, GetStuTimetable, GetStuFeeds,
-                                  ChangePassword, SetTelephone, GetOptionalLessons, GetSelectedLessons, SelectLesson,
-                                  DeleteLesson)
+                                  ChangePassword, SetTelephone, GetOptionalLessons, GetSelectedLessons, ChangeLesson)
 from .core import register_api, unfinished, unstable
-from .logger import hfut_stu_lib_logger
+from .parser import dict_list_2_tuple_set
+from .log import logger
 
 __all__ = ['get_class_students', 'get_class_info', 'search_lessons', 'get_teaching_plan', 'get_teacher_info',
            'get_lesson_classes'].extend(
@@ -126,78 +126,104 @@ def get_selected_lessons(auth_session):
 
 
 @register_api
-def is_lesson_selected(auth_session, kcdm):
-    """
-    检查课程是否被选
-    :param auth_session: AuthSession 对象
-    :param kcdm:课程代码
-    :return:已选返回True,未选返回False
-    """
-    selected_lessons = get_selected_lessons(auth_session)
-    for lesson in selected_lessons:
-        if kcdm.upper() == lesson['课程代码']:
-            return True
-    return False
-
-
-# todo: 提交前判断人数
-@register_api
-def select_lesson(auth_session, kvs):
+def change_lesson(auth_session, select_lessons=None, delete_lessons=None):
     """
     提交选课
     :param auth_session: AuthSession 对象
-    :param kvs:课程代码
+    :param select_lessons: 形如 {'kcdm': '9900039X', jxbhs: ['0001', '0002']} 的课程代码与教学班号列表, jxbhs 可以为空代表选择所有可选班级
+    :param delete_lessons: 需要删除的课程代码列表
     :return:选课结果, 返回选中的课程教学班列表
     """
-    # 参数中的课程代码, 用于检查参数
-    kcdms = set()
+    if not (select_lessons or delete_lessons):
+        raise ValueError('select_lessons, delete_lessons 参数不能都为空!')
+    # 参数处理
+    select_lessons = select_lessons or []
+    delete_lessons = {l.upper() for l in (delete_lessons or [])}
+
+    selected_lessons = get_selected_lessons(auth_session)
+    selected_kcdms = {lesson['课程代码'] for lesson in selected_lessons}
+
+    # 尝试删除没有被选中的课程会出错
+    unselected = delete_lessons.difference(selected_kcdms)
+    if unselected:
+        msg = '无法删除没有被选的课程 {}'.format(unselected)
+        logger.error(msg)
+        raise ValueError(msg)
+
     # 要提交的 kcdm 数据
     kcdms_data = []
     # 要提交的 jxbh 数据
     jxbhs_data = []
-    # 参数处理
-    for kv in kvs:
-        kcdm = kv['kcdm'].upper()
-        jxbhs = kv['jxbhs']
-        if kcdm not in kcdms:
-            kcdms.add(kcdm)
-            if is_lesson_selected(auth_session, kcdm):
-                hfut_stu_lib_logger.warning('课程 %s 你已经选过了', kcdm)
-            else:
-                if not jxbhs:
-                    if is_lesson_selected(auth_session, kcdm):
-                        hfut_stu_lib_logger.warning('你已经选了课程 %s, 如果你要选课的话, 请勿选取此课程代码', kcdm)
-                    teaching_classes = get_lesson_classes(auth_session, kcdm)
-                    for klass in teaching_classes:
-                        kcdms_data.append(kcdm)
-                        jxbhs_data.append(klass['教学班号'])
-                else:
-                    for jxbh in jxbhs:
-                        kcdms_data.append(kcdm)
-                        jxbhs_data.append(jxbh)
-        else:
-            raise ValueError('你有多个 kcdm={:s} 的字典, 请检查你的参数'.format(kcdm))
 
-    # 必须添加已选课程
-    selected_lessons = get_selected_lessons(auth_session)
+    # 必须添加已选课程, 同时去掉要删除的课程
     for lesson in selected_lessons:
-        kcdms_data.append(lesson['课程代码'])
-        jxbhs_data.append(lesson['教学班号'])
+        if lesson['课程代码'] not in delete_lessons:
+            kcdms_data.append(lesson['课程代码'])
+            jxbhs_data.append(lesson['教学班号'])
 
-    return auth_session.api_request(SelectLesson(auth_session.account, kcdms_data, jxbhs_data).gen_api_req_obj()).data
+    # 选课
+    for kv in select_lessons:
+        kcdm = kv['kcdm'].upper()
+        jxbhs = set(kv['jxbhs']) if kv.get('jxbhs') else set()
+
+        teaching_classes = get_lesson_classes(auth_session, kcdm)
+        if teaching_classes is None:
+            logger.warning('课程[%s]没有可选班级', kcdm)
+            continue
+
+        # 反正是统一提交, 不需要判断是否已满
+        optional_jxbhs = {c['教学班号'] for c in teaching_classes['可选班级']}
+        if jxbhs:
+            wrong_jxbhs = jxbhs.difference(optional_jxbhs)
+            if wrong_jxbhs:
+                msg = '课程[{}]{}没有教学班号{}'.format(kcdm, teaching_classes['课程名称'], wrong_jxbhs)
+                logger.error(msg)
+                raise ValueError(msg)
+        else:
+            jxbhs = optional_jxbhs
+        for jxbh in jxbhs:
+            kcdms_data.append(kcdm)
+            jxbhs_data.append(jxbh)
+
+    result = auth_session.api_request(ChangeLesson(auth_session.account, kcdms_data, jxbhs_data).gen_api_req_obj())
+    logger.debug(result)
+    # 通过已选课程前后对比确定课程修改结果
+    before_change = dict_list_2_tuple_set(selected_lessons)
+    after_change = dict_list_2_tuple_set(get_selected_lessons(auth_session))
+    deleted = before_change.difference(after_change)
+    selected = after_change.difference(before_change)
+    result = {'删除课程': dict_list_2_tuple_set(deleted, reverse=True) or None,
+              '选中课程': dict_list_2_tuple_set(selected, reverse=True) or None}
+    logger.debug(result)
+    return result
+
+
+# ---------- 不需要专门的请求 ----------
+@register_api
+def is_lesson_selected(auth_session, kcdms):
+    """
+    检查课程是否被选
+    :param auth_session: AuthSession 对象
+    :param kcdms: 课程代码列表
+    :return: 已选返回True,未选返回False
+    """
+    selected_lessons = get_selected_lessons(auth_session)
+    selected_kcdms = {lesson['课程代码'] for lesson in selected_lessons}
+    result = [True if kcdm in selected_kcdms else False for kcdm in kcdms]
+    return result[0] if len(result) == 1 else result
 
 
 @register_api
-def delete_lesson(auth_session, kcdms):
-    # 对参数进行预处理
-    kcdms = set(kcdms)
-    kcdms = [v.upper() for v in kcdms]
-
-    kcdms_data = []
-    jxbhs_data = []
-    selected_lessons = get_selected_lessons(auth_session)
-    for lesson in selected_lessons:
-        if lesson['课程代码'] not in kcdms:
-            kcdms_data.append(lesson['课程代码'])
-            jxbhs_data.append(lesson['教学班号'])
-    return auth_session.api_request(DeleteLesson(auth_session.account, kcdms_data, jxbhs_data).gen_api_req_obj()).data
+def get_lessons_can_be_selected(auth_session, kcdms=None, dump_result=True, filename='可选课程.json'):
+    kcdms = kcdms or [l['课程代码'] for l in get_optional_lessons(auth_session)]
+    result = []
+    for kcdm in kcdms:
+        lesson_classes = get_lesson_classes(auth_session, kcdm)
+        if lesson_classes is not None:
+            lesson_classes['可选班级'] = [c for c in lesson_classes['可选班级'] if c['课程容量'] > c['选中人数']]
+            if len(lesson_classes['可选班级']) > 0:
+                result.append(lesson_classes)
+    if dump_result:
+        json.dump(result, open(filename, 'w', encoding='utf-8'), ensure_ascii=False)
+        logger.debug('result dumped to %s', filename)
+    return result

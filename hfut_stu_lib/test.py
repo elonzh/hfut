@@ -6,12 +6,12 @@ import unittest
 
 import six
 
-from hfut_stu_lib import AuthSession, hfut_stu_lib_logger, STUDENT
+from hfut_stu_lib import AuthSession, logger, STUDENT
 from hfut_stu_lib.util import get_point, cal_gpa
 
 
 class BaseTest(unittest.TestCase):
-    hfut_stu_lib_logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG)
 
     def assertEveryKeys(self, seq, keys):
         keys.sort()
@@ -69,11 +69,8 @@ class GuestTest(BaseTest):
         self.assertDictKeys(res, keys)
 
     def test_get_lesson_classes(self):
-        keys = ['优选范围', '教师', '教学班号']
-        self.assertEveryKeys(self.session.get_lesson_classes('0521290X'), keys)
-        # detail_keys = ['教师', '开课单位', '课程类型', '教学班号', '校区', '禁选范围', '时间地点', '性别限制',
-        #                '课程名称', '优选范围', '备 注', '学分', '考核类型', '选中人数', '起止周']
-        # self.assertEveryKeys(self.session.get_lesson_classes('0521290X', detail=True), detail_keys)
+        keys = ['起止周', '考核类型', '教学班附加信息', '课程容量', '选中人数', '教学班号', '禁选专业', '教师', '校区', '优选范围', '开课时间,开课地点']
+        self.assertEveryKeys(self.session.get_lesson_classes('9900039X')['可选班级'], keys)
 
 
 class StudentTest(BaseTest):
@@ -139,18 +136,35 @@ class StudentTest(BaseTest):
         self.assertEveryKeys(res, keys)
 
     def test_is_lesson_selected(self):
-        self.assertFalse(self.session.is_lesson_selected('1234567'))
-        self.assertFalse(self.session.is_lesson_selected('0700052B'))
-        # self.assertTrue(self.session.is_lesson_selected('0532232B'))
-        self.assertTrue(self.session.is_lesson_selected('1201061B'))
+        self.assertEqual(self.session.is_lesson_selected(['1234567', '0700052B', '1201061B']),
+                         [False, False, True])
 
-    def test_select_lesson(self):
-        # todo: 待补充 select_lesson 测试用例
-        pass
-
-    def test_delete_lesson(self):
-        # todo: 待补充 delete_lesson 测试用例
-        pass
+    def test_change_lesson(self):
+        # 参数为空
+        self.assertRaises(ValueError, self.session.change_lesson, select_lessons=None, delete_lessons=None)
+        # 删除未选课程
+        self.assertRaises(ValueError, self.session.change_lesson, delete_lessons=['1234567B'])
+        # 选择不存在的教学班
+        self.assertRaises(ValueError, self.session.change_lesson,
+                          select_lessons=[{'kcdm': '9900039X', 'jxbhs': ['0008']}])
+        # 选择已选中的课程
+        self.assertEqual(self.session.change_lesson([{'kcdm': '9900039X'}]), {'删除课程': None, '选中课程': None})
+        # 修改班级
+        self.assertEqual(self.session.change_lesson([{'kcdm': '9900039X', 'jxbhs': ['0002']}], ['9900039X']),
+                         {'删除课程': [{'学分': '0',
+                                    '教学班号': '0001',
+                                    '课程代码': '9900039X',
+                                    '课程名称': '大学英语拓展（一）',
+                                    '课程类型': '任选',
+                                    '费用': '0'}],
+                          '选中课程': [{'学分': '0',
+                                    '教学班号': '0002',
+                                    '课程代码': '9900039X',
+                                    '课程名称': '大学英语拓展（一）',
+                                    '课程类型': '任选',
+                                    '费用': '0'}]})
+        # 恢复
+        self.session.change_lesson([{'kcdm': '9900039X', 'jxbhs': ['0001']}], ['9900039X'])
 
 
 class UtilTest(BaseTest):

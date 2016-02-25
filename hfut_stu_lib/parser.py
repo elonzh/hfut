@@ -1,7 +1,10 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals, division
 
-from .logger import hfut_stu_lib_logger as logger
+import six
+from bs4.element import Tag
+
+from .log import logger
 
 
 def parse_tr_strs(trs):
@@ -11,6 +14,8 @@ def parse_tr_strs(trs):
     :param trs: <tr> 标签数组, 为 BeautifulSoup 节点对象
     :return: 二维列表
     """
+    if isinstance(trs, Tag):
+        trs = [trs]
     tr_strs = []
     for tr in trs:
         strs = []
@@ -31,7 +36,7 @@ def parse_tr_strs(trs):
                 logger.error(s_list)
                 raise ValueError(msg)
         tr_strs.append(strs)
-    return tr_strs
+    return tr_strs if len(tr_strs) > 1 else tr_strs[0]
 
 
 def flatten_list(multiply_list):
@@ -48,3 +53,9 @@ def flatten_list(multiply_list):
         return [rv for l in multiply_list for rv in flatten_list(l)]
     else:
         return [multiply_list]
+
+
+def dict_list_2_tuple_set(dict_list_or_tuple_set, reverse=False):
+    if reverse:
+        return [dict(l) for l in dict_list_or_tuple_set]
+    return {tuple(six.iteritems(d)) for d in dict_list_or_tuple_set}

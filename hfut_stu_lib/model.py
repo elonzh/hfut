@@ -6,6 +6,7 @@ import requests
 import six
 
 from pprint import pformat
+from abc import abstractmethod
 
 from .const import HOST_URL
 from .hooks import response_encoding
@@ -38,6 +39,7 @@ class APIRequestBuilder(object):
 
     hooks = None
 
+    @abstractmethod
     def after_response(self, response, *args, **kwargs):
         """
         :param response: requests.Response
@@ -75,6 +77,7 @@ class APIRequestBuilder(object):
         return APIRequest(**kwargs)
 
 
+@six.python_2_unicode_compatible
 class APIRequest(requests.Request):
     def __init__(self, proxies=None, stream=None, verify=None, cert=None, timeout=None, allow_redirects=True,
                  **request_kwargs):
@@ -86,17 +89,18 @@ class APIRequest(requests.Request):
         self.allow_redirects = allow_redirects
         super(APIRequest, self).__init__(**request_kwargs)
 
-    def __repr__(self):
+    def __str__(self):
         return '<APIRequest [{:s}] {:s}>'.format(self.method, self.url)
 
 
+@six.python_2_unicode_compatible
 class APIResult(object):
     def __init__(self, response, data=None):
         super(APIResult, self).__init__()
         self.response = response
         self.data = data
 
-    def __repr__(self):
+    def __str__(self):
         return '\n'.join(['<APIResult> [{:s}] {:s}'.format(self.request.method, self.url), pformat(self.data)])
 
     def __getattr__(self, item):

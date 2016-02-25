@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals, division
 
-from .const import SITE_ENCODING
+import json
 
 
 def get_point(grade_str):
@@ -81,11 +81,9 @@ def cal_gpa(grades):
     return round(ave_point, 5), round(gpa, 5)
 
 
-def gen_noargs_api(api_request_builder_class):
-    return lambda auth_session: auth_session.api_request(api_request_builder_class().gen_api_req_obj())
+def store_api_result(api_result, filename='api_result', encoding='utf-8'):
+    with open(filename + '.html', 'w', encoding=encoding) as fp:
+        fp.write(api_result.response.text)
+    json.dump(api_result.data, open(filename + '.json', 'w', encoding=encoding), ensure_ascii=False)
 
 
-def store_response(response, path='response.html', encoding=SITE_ENCODING):
-    response.encoding = encoding
-    with open(path, 'wb') as fp:
-        fp.write(response.text.encode())
