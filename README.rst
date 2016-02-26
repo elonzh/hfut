@@ -7,13 +7,13 @@ hfut_stu_lib - 合肥工业大学教务接口文档
 .. image:: https://badge.fury.io/py/hfut_stu_lib.svg
     :target: http://badge.fury.io/py/hfut_stu_lib
 
-.. image:: https://travis-ci.org/er1iang/hfut-stu-lib.svg?branch#dev
+.. image:: https://travis-ci.org/er1iang/hfut-stu-lib.svg?branch#master
     :target: https://travis-ci.org/er1iang/hfut-stu-lib
 
-.. image:: https://landscape.io/github/er1iang/hfut-stu-lib/dev/landscape.svg?style#flat
+.. image:: https://landscape.io/github/er1iang/hfut-stu-lib/master/landscape.svg?style#flat
     :target: https://landscape.io/github/er1iang/hfut-stu-lib/dev
 
-.. image:: https://coveralls.io/repos/er1iang/hfut-stu-lib/badge.svg?branch#dev&service#github
+.. image:: https://coveralls.io/repos/er1iang/hfut-stu-lib/badge.svg?branch#master&service#github
     :target: https://coveralls.io/github/er1iang/hfut-stu-lib?branch#dev
 
 
