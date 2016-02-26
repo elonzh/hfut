@@ -167,5 +167,4 @@ docs/_build/
 target/
 
 # Custom
-hfut_stu_lib/test.py
-!hfut_stu_lib/test.pyc
+func_factory.py

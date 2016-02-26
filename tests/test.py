@@ -139,32 +139,32 @@ class StudentTest(BaseTest):
         self.assertEqual(self.session.is_lesson_selected(['1234567', '0700052B', '1201061B']),
                          [False, False, True])
 
-    def test_change_lesson(self):
-        # 参数为空
-        self.assertRaises(ValueError, self.session.change_lesson, select_lessons=None, delete_lessons=None)
-        # 删除未选课程
-        self.assertRaises(ValueError, self.session.change_lesson, delete_lessons=['1234567B'])
-        # 选择不存在的教学班
-        self.assertRaises(ValueError, self.session.change_lesson,
-                          select_lessons=[{'kcdm': '9900039X', 'jxbhs': ['0008']}])
-        # 选择已选中的课程
-        self.assertEqual(self.session.change_lesson([{'kcdm': '9900039X'}]), {'删除课程': None, '选中课程': None})
-        # 修改班级
-        self.assertEqual(self.session.change_lesson([{'kcdm': '9900039X', 'jxbhs': ['0002']}], ['9900039X']),
-                         {'删除课程': [{'学分': '0',
-                                    '教学班号': '0001',
-                                    '课程代码': '9900039X',
-                                    '课程名称': '大学英语拓展（一）',
-                                    '课程类型': '任选',
-                                    '费用': '0'}],
-                          '选中课程': [{'学分': '0',
-                                    '教学班号': '0002',
-                                    '课程代码': '9900039X',
-                                    '课程名称': '大学英语拓展（一）',
-                                    '课程类型': '任选',
-                                    '费用': '0'}]})
-        # 恢复
-        self.session.change_lesson([{'kcdm': '9900039X', 'jxbhs': ['0001']}], ['9900039X'])
+    # def test_change_lesson(self):
+    #     # 参数为空
+    #     self.assertRaises(ValueError, self.session.change_lesson, select_lessons=None, delete_lessons=None)
+    #     # 删除未选课程
+    #     self.assertRaises(ValueError, self.session.change_lesson, delete_lessons=['1234567B'])
+    #     # 选择不存在的教学班
+    #     self.assertRaises(ValueError, self.session.change_lesson,
+    #                       select_lessons=[{'kcdm': '9900039X', 'jxbhs': ['0008']}])
+    #     # 选择已选中的课程
+    #     self.assertEqual(self.session.change_lesson([{'kcdm': '9900039X'}]), {'删除课程': None, '选中课程': None})
+    #     # 修改班级
+    #     self.assertEqual(self.session.change_lesson([{'kcdm': '9900039X', 'jxbhs': ['0002']}], ['9900039X']),
+    #                      {'删除课程': [{'学分': '0',
+    #                                 '教学班号': '0001',
+    #                                 '课程代码': '9900039X',
+    #                                 '课程名称': '大学英语拓展（一）',
+    #                                 '课程类型': '任选',
+    #                                 '费用': '0'}],
+    #                       '选中课程': [{'学分': '0',
+    #                                 '教学班号': '0002',
+    #                                 '课程代码': '9900039X',
+    #                                 '课程名称': '大学英语拓展（一）',
+    #                                 '课程类型': '任选',
+    #                                 '费用': '0'}]})
+    #     # 恢复
+    #     self.session.change_lesson([{'kcdm': '9900039X', 'jxbhs': ['0001']}], ['9900039X'])
 
 
 class UtilTest(BaseTest):

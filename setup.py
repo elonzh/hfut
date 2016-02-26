@@ -26,7 +26,7 @@ setup(
 
     packages=find_packages(),
     platforms='any',
-    test_suite='hfut_stu_lib.test',
+    test_suite='tests',
 
     # data_files=[('', ['README.rst', 'CHANGES.md', 'LICENSE'])],
     classifiers=[

@@ -1,1 +1,1 @@
-include README.rst CHANGES.md LICENSE requirements.txt
+include README.rst CHANGES.md LICENSE requirements.txt tests
