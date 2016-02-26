@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals, division
 
-from . import api
+from . import api, util
 from .const import *
 from .log import logger
 from .session import AuthSession
