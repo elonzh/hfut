@@ -22,15 +22,15 @@
 ------------
 
 hfut_stu_lib 目前发布在 GitHub ，
-`代码 <https://github.com/er1iang/hfut-stu-lib>`_ 目前仍在发布中.
+`代码 <https://github.com/er1iang/hfut_stu_lib>`_ 目前仍在发布中.
 
 你可以克隆项目仓库::
 
-    $ git clone git@github.com:er1iang/hfut-stu-lib.git
+    $ git clone git@github.com:er1iang/hfut_stu_lib.git
 
-或者下载 `压缩包 <https://github.com/er1iang/hfut-stu-lib/tarball/master>`_::
+或者下载 `压缩包 <https://github.com/er1iang/hfut_stu_lib/tarball/master>`_::
 
-    $ curl -OL https://github.com/er1iang/hfut-stu-lib/tarball/master
+    $ curl -OL https://github.com/er1iang/hfut_stu_lib/tarball/master
       # 可选的， zipball 也可以 (对于 Windows 用户来说).
 
 一旦你获得了源码，你可以把它插入到你自己的包中，或者使用以下命令安装::

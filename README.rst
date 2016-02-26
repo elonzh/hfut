@@ -7,14 +7,14 @@ hfut_stu_lib - 合肥工业大学教务接口文档
 .. image:: https://badge.fury.io/py/hfut_stu_lib.svg
     :target: http://badge.fury.io/py/hfut_stu_lib
 
-.. image:: https://travis-ci.org/er1iang/hfut-stu-lib.svg?branch#master
-    :target: https://travis-ci.org/er1iang/hfut-stu-lib
+.. image:: https://travis-ci.org/er1iang/hfut_stu_lib.svg?branch#master
+    :target: https://travis-ci.org/er1iang/hfut_stu_lib
 
-.. image:: https://landscape.io/github/er1iang/hfut-stu-lib/master/landscape.svg?style#flat
-    :target: https://landscape.io/github/er1iang/hfut-stu-lib/dev
+.. image:: https://landscape.io/github/er1iang/hfut_stu_lib/master/landscape.svg?style#flat
+    :target: https://landscape.io/github/er1iang/hfut_stu_lib/dev
 
-.. image:: https://coveralls.io/repos/er1iang/hfut-stu-lib/badge.svg?branch#master&service#github
-    :target: https://coveralls.io/github/er1iang/hfut-stu-lib?branch#dev
+.. image:: https://coveralls.io/repos/er1iang/hfut_stu_lib/badge.svg?branch#master&service#github
+    :target: https://coveralls.io/github/er1iang/hfut_stu_lib?branch#dev
 
 
 hfut_stu_lib provided full-featured interfaces for the educational administration system of HeFei University of Technology.
@@ -28,11 +28,11 @@ hfut_stu_lib 提供了合肥工业大学教务系统学生端接口并提供了�
 文档
 -----
 
-完整文档位于 http://docs.python-requests.org/ ，你只要花一点时间就能了解整个项目
+完整文档位于 http://hfut_stu_lib.readthedocs.org/ ，你只要花一点时间就能了解整个项目
 
 开发及拓展模块
 ------------------
 
 你可以开发自己额外的接口和缓存管理对象, 只要注意一下规则即可, 或者 fork 一个分支, 开发好了提交 PullRequest 合并到这个项目中
 
-**更新日志请查看：** `HISTORY.rst <https://github.com/evilerliang/hfut-stu-lib/blob/master/HISTORY.rst>`_
+**更新日志请查看：** `HISTORY.rst <https://github.com/er1iang/hfut_stu_lib/blob/master/HISTORY.rst>`_

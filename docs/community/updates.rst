@@ -10,7 +10,7 @@ GitHub
 ------
 
 最好的方式是追踪 hfut_stu_lib 开发版本的
-`GitHub 库 <https://github.com/er1iang/hfut-stu-lib>`_.
+`GitHub 库 <https://github.com/er1iang/hfut_stu_lib>`_.
 
 
 

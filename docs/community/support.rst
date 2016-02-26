@@ -10,7 +10,7 @@
 -------------
 
 如果你在 hfut_stu_lib 中注意到了一些意想不到的行为，或者希望看到一个新的功能支持，请查看
-`在 GitHub 上提交问题 <https://github.com/er1iang/hfut-stu-lib/issues>`_.
+`在 GitHub 上提交问题 <https://github.com/er1iang/hfut_stu_lib/issues>`_.
 
 
 邮件
