@@ -15,10 +15,12 @@ class PyTest(TestCommand):
 
     def initialize_options(self):
         TestCommand.initialize_options(self)
-        self.pytest_args = ['--cov-config', '.coveragerc',
-                            '--cov-report', 'html',
-                            '--cov=hfut_stu_lib', 'tests/',
-                            '--doctest-modules']
+        self.pytest_args = [
+            '--cov-config', '.coveragerc',
+            # '--cov-report', 'html',
+            '--cov=hfut_stu_lib', 'tests/',
+            # '--doctest-modules'
+        ]
 
     def run_tests(self):
         # import here, cause outside the eggs aren't loaded
