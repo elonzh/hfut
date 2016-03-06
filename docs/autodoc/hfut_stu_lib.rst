@@ -1,94 +1,30 @@
-hfut_stu_lib package
-====================
+.. _api:
 
-Submodules
-----------
+hfut_stu_lib 的主要 API
+===================================
 
-hfut_stu_lib.api module
------------------------
+hfut_stu_lib.models 核心接口模块
+---------------------------------------------
+.. automodule:: hfut_stu_lib.models
 
-.. automodule:: hfut_stu_lib.api
+.. autoclass:: hfut_stu_lib.models.APIResult
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-hfut_stu_lib.api_request_builder module
----------------------------------------
-
-.. automodule:: hfut_stu_lib.api_request_builder
+.. autoclass:: hfut_stu_lib.models.BaseSession
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-hfut_stu_lib.const module
--------------------------
-
-.. automodule:: hfut_stu_lib.const
+.. autoclass:: hfut_stu_lib.models.GuestSession
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-hfut_stu_lib.core module
-------------------------
-
-.. automodule:: hfut_stu_lib.core
+.. autoclass:: hfut_stu_lib.models.AuthSession
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-hfut_stu_lib.hooks module
--------------------------
-
-.. automodule:: hfut_stu_lib.hooks
+.. autoclass:: hfut_stu_lib.models.StudentSession
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-hfut_stu_lib.log module
------------------------
 
-.. automodule:: hfut_stu_lib.log
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hfut_stu_lib.model module
--------------------------
-
-.. automodule:: hfut_stu_lib.model
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hfut_stu_lib.parser module
---------------------------
-
-.. automodule:: hfut_stu_lib.parser
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hfut_stu_lib.session module
----------------------------
-
-.. automodule:: hfut_stu_lib.session
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hfut_stu_lib.util module
-------------------------
+hfut_stu_lib.util 辅助函数模块
+---------------------------------------------------------
 
 .. automodule:: hfut_stu_lib.util
     :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: hfut_stu_lib
-    :members:
-    :undoc-members:
-    :show-inheritance:

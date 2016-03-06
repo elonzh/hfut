@@ -13,6 +13,19 @@ if NOT "%PAPER%" == "" (
 	set I18NSPHINXOPTS=-D latex_paper_size=%PAPER% %I18NSPHINXOPTS%
 )
 
+set PROJECT=../hfut_stu_lib
+
+rem ----- 自己添加的编译参数 -----
+if "%1" == "autodoc" (
+	sphinx-apidoc -o autodoc %PROJECT%
+	goto end
+)
+
+if "%1" == "livehtml" (
+    sphinx-autobuild -b html %ALLSPHINXOPTS% %BUILDDIR%/html
+)
+rem ----- 自己添加的编译参数 -----
+
 if "%1" == "" goto help
 
 if "%1" == "help" (
@@ -73,6 +86,7 @@ if errorlevel 9009 (
 
 
 if "%1" == "html" (
+	:html
 	%SPHINXBUILD% -b html %ALLSPHINXOPTS% %BUILDDIR%/html
 	if errorlevel 1 exit /b 1
 	echo.

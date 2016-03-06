@@ -3,7 +3,7 @@
 支持
 =======
 
-对于 hfut_stu_lib ，如果你有疑问或者是问题的话，下面几种方法能解决：
+对于 hfut_stu_lib ，如果你有疑问或者是问题的话，下面几种方法能解决:
 
 
 修复问题
@@ -16,5 +16,5 @@
 邮件
 ------
 
-我更乐意回答关于 hfut_stu_lib 的个人或者更深入的问题。
+我更乐意回答关于 hfut_stu_lib 的个人或者更深入的问题.
 `eviler_liang@foxmail.com <mailto:eviler_liang@foxmail.com>`_.

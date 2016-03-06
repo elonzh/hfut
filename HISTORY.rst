@@ -18,6 +18,74 @@
 开发日志
 ---------------
 
+1.0.0 (20160307)
+++++++++++++++++
+
+**功能和改进**
+
+- 精简了架构,现在接口区分更清晰,现在支持单独的会话配置,同时不会再因动态绑定接口而无法进行代码提示
+- 添加了 :func:`util.cal_term_code` 和 :func:`util.term_str2code` 计算学期代码
+- 添加了 :meth:`models.GuestSession.get_selecting_lesson_time` 查询选课时间
+- 添加 :func:`get_host_speed_rank`,由于宣城校区校内还有多个镜像站点,现在提供了测试地址速度排行的功能
+- 现在能够自动更新会话保持登录状态了
+- todo: 现在支持合肥校区的访问了
+
+**小的改进**
+
+- :func:`change_lesson` 现在能够判断当前是否能够选课
+- :func:`get_lessons_can_be_selected` 导出的结果现在是格式化后的了
+- :meth:`models.StudentSession.get_stu_timetable` 现在返回的上课周数为周数列表便于实际处理
+- :class:`get_selected_lessons` 结果中的 ``费用`` 和 ``学分`` 两个字段从字符串分别改为了整型和浮点型
+- 调整了 :meth:`models.GuestSession.get_teaching_plan` 的参数使使用更加方便
+- 统一了 :meth:`models.StudentSession.get_code` 的结果键值为中文
+- 现在登录时能够判断是否是煞笔的防注入系统导致无法登陆并且如果是宣城校区会自动选取可用地址重新登录
+
+
+**接口改变**
+
+- 去除了 ``const``, ``session``, ``api``, ``api_request_builder``, ``core``
+- 将原来的 ``api`` 中所有的接口根据要求的登录权限不同分别迁移到了 :class:`models.GuestSession` 和 :class:`models.StudentSession`
+- 将原来的 ``core`` 中的 ``@unstable``, ``@unfinish`` 迁移到了 ``log`` 模块中
+- ``const`` 中的配置项迁移到了 :class:`BaseSession` 中, 现在的配置是会话级而不是全局的,这样可以方便的根据需要进行修改
+- :func:`util.store_api_result` 迁移到了 :meth:`models.APIResult.store_api_result` 并稍微调整了一下参数
+- 重新命名了大量接口使其更易理解, 同时纠正命名的错误, 接口的重命名状态如下
+    - ``get_selecting_lesson_time`` -> ``get_system_state``
+    - ``search_lessons`` -> ``search_course``
+    - ``get_lesson_classes`` -> ``get_course_classes``
+    - ``get_stu_info`` -> ``get_my_info``
+    - ``get_stu_grades`` -> ``get_my_achievements``
+    - ``get_stu_timetable`` -> ``get_my_curriculum``
+    - ``get_stu_feeds`` -> ``get_my_fees``
+    - ``get_optional_lessons`` -> ``get_optional_courses``
+    - ``get_selected_lessons`` -> ``get_selected_courses``
+    - ``is_lesson_selected`` -> ``check_courses``
+    - ``get_lessons_can_be_selected`` -> ``get_selectable_courses``
+
+**行为改变**
+
+- 现在登录也看作是一个接口,进行了重构
+- 现在所有的接口返回的都是 :class:`models.APIResult` 对象
+
+**问题修复**
+
+- 修复发送登录权限不一致时仍会发送请求的问题
+- 修复 :class:`AuthSession` 初始化时参数判断逻辑错误
+- 修复 :class:`models.APIRequest` 初始化时继承参数错误
+- 修复 :func:`api.get_optional_lessons` 由于疏忽缺少一个参数
+- 修复 :meth:`models.StudentSession.get_stu_timetable` 上课周数匹配情况的遗漏
+- 修复 :meth:`models.GuestSession.search_lessons` 由于编码问题无法使用课程名称搜索的问题
+- 修复 :func:`parser.parse_tr_strs` 触发异常时字符串格式错误的问题
+
+**文档**
+
+- 在**高级技巧**一章添加了例子
+
+**其他杂项**
+
+- 将默认的测试模块从 ``unitest`` 迁移到了 ``pytest``
+- 添加大量测试,Python 版本覆盖 2.6-3.5
+
+
 0.5.0 (20160225)
 ++++++++++++++++
 
@@ -154,10 +222,8 @@
 
 - 统一将返回的课程代码进行大写转换,
       避免因学校课程代码大小写的不统一产生不可预料的问题
-- 重构了 ``StuLib.select_lesson`` ,
-      现在支持更好地批量选课以及更好地结果处理过程
-- 重构了 ``StuLib.delete_lesson`` ,
-      现在支持批量删课以及更好地结果处理过程
+- 重构了 ``StuLib.select_lesson`` , 现在支持更好地批量选课以及更好地结果处理过程
+- 重构了 ``StuLib.delete_lesson`` , 现在支持批量删课以及更好地结果处理过程
 
 0.0.2 (20150903)
 ++++++++++++++++
@@ -170,7 +236,7 @@
 ++++++++++++++++
 
 - 修复 ``StuLib.get_class_info`` 出错
-- 添加 教师信息查询（\ ``StuLib.get_teacher_info``\ ） 功能
+- 添加 教师信息查询 ``StuLib.get_teacher_info`` 功能
 - 将 ``StuLib.get_url`` 的 ``code`` 修改为对应的方法名称
 - 修复 ``StuLib.change_password`` 正则匹配不完整的问题
 - 修复 ``StuLib.set_telephone`` 正则匹配不完整的问题
