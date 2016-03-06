@@ -17,10 +17,10 @@ hfut_stu_lib - 合工大教务接口文档
     :target: https://travis-ci.org/er1iang/hfut_stu_lib
 
 .. image:: https://landscape.io/github/er1iang/hfut_stu_lib/master/landscape.svg?style#flat
-    :target: https://landscape.io/github/er1iang/hfut_stu_lib/dev
+    :target: https://landscape.io/github/er1iang/hfut_stu_lib/master
 
 .. image:: https://coveralls.io/repos/er1iang/hfut_stu_lib/badge.svg?branch#master&service#github
-    :target: https://coveralls.io/github/er1iang/hfut_stu_lib?branch#dev
+    :target: https://coveralls.io/github/er1iang/hfut_stu_lib?branch#master
 
 hfut_stu_lib provided full-featured interfaces for the educational administration system of HeFei University of Technology.
 
@@ -37,6 +37,7 @@ hfut_stu_lib 提供了合肥工业大学教务系统学生端接口并提供了�
 - 提供了强大的选课接口, 你能轻松查询可选的课程, 查看教学班级选中人数, 批量提交增删课程数据
 - 数据能够轻松导出, 能够为基于工大教务数据的服务或应用提供强大的底层支持
 - 对开发友好, 提供了用于继承的基类以及页面处理的函数和其他工具提升你的开发效率
+- Python2/3 兼容, 代码在 2.7,3.3,3.4,3.5 四个版本上进行了测试
 
 
 它能做什么？
