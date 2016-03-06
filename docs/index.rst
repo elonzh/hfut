@@ -19,8 +19,8 @@ hfut_stu_lib - 合工大教务接口文档
 .. image:: https://landscape.io/github/er1iang/hfut_stu_lib/master/landscape.svg?style#flat
     :target: https://landscape.io/github/er1iang/hfut_stu_lib/master
 
-.. image:: https://coveralls.io/repos/er1iang/hfut_stu_lib/badge.svg?branch#master&service#github
-    :target: https://coveralls.io/github/er1iang/hfut_stu_lib?branch#master
+.. image:: https://coveralls.io/repos/github/er1iang/hfut_stu_lib/badge.svg?branch=master
+    :target: https://coveralls.io/github/er1iang/hfut_stu_lib?branch=master
 
 hfut_stu_lib provided full-featured interfaces for the educational administration system of HeFei University of Technology.
 
