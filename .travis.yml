@@ -12,7 +12,7 @@ install:
   - "pip install -r dev-requirements.txt"
 # command to run tests
 script:
-  - coverage run setup.py test
+  - setup.py test
 after_success:
   - coveralls
 notifications:
