@@ -60,7 +60,7 @@ class TestUtil(TestBase):
             '172.18.6.98',
             '172.18.6.99'
         ])
-        assert len(r) == 1
+        assert len(r) <= 1
         with pytest.raises(ValueError):
             util.get_host_speed_rank(['qq.com'])
         assert util.get_host_speed_rank(timeout=0) == []

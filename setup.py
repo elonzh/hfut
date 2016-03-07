@@ -17,9 +17,9 @@ class PyTest(TestCommand):
         TestCommand.initialize_options(self)
         self.pytest_args = [
             '--cov-config', '.coveragerc',
-            # '--cov-report', 'html',
+            '--cov-report', 'html',
             '--cov=hfut_stu_lib', 'tests/',
-            # '--doctest-modules'
+            '--doctest-modules'
         ]
 
     def run_tests(self):

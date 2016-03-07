@@ -6,21 +6,7 @@ hfut_stu_lib - 合工大教务接口文档
 开发状态
 -----------
 
-.. image:: https://badge.fury.io/py/hfut_stu_lib.svg
-    :target: http://badge.fury.io/py/hfut_stu_lib
-
-.. image:: https://readthedocs.org/projects/hfut-stu-lib/badge/?version=latest
-    :target: http://hfut-stu-lib.readthedocs.org/zh/latest/?badge=latest
-    :alt: Documentation Status
-
-.. image:: https://travis-ci.org/er1iang/hfut_stu_lib.svg?branch#master
-    :target: https://travis-ci.org/er1iang/hfut_stu_lib
-
-.. image:: https://landscape.io/github/er1iang/hfut_stu_lib/master/landscape.svg?style#flat
-    :target: https://landscape.io/github/er1iang/hfut_stu_lib/master
-
-.. image:: https://coveralls.io/repos/github/er1iang/hfut_stu_lib/badge.svg?branch=master
-    :target: https://coveralls.io/github/er1iang/hfut_stu_lib?branch=master
+.. include:: dev-state.rst
 
 hfut_stu_lib provided full-featured interfaces for the educational administration system of HeFei University of Technology.
 
