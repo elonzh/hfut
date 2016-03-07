@@ -19,9 +19,6 @@ hfut_stu_lib - 合肥工业大学教务接口文档
 .. image:: https://landscape.io/github/er1iang/hfut_stu_lib/master/landscape.svg?style#flat
     :target: https://landscape.io/github/er1iang/hfut_stu_lib/master
 
-.. image:: https://img.shields.io/coveralls/er1iang/hfut_stu_lib.svg
-    :target: https://coveralls.io/github/er1iang/hfut_stu_lib?branch=master
-
 hfut_stu_lib provided full-featured interfaces for the educational administration system of HeFei University of Technology.
 
 hfut_stu_lib 提供了合肥工业大学教务系统学生端接口并提供了方便开发者开发围绕学生数据的一些工具.
