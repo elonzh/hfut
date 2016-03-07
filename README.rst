@@ -4,7 +4,23 @@ hfut_stu_lib - 合肥工业大学教务接口文档
 开发状态
 -----------
 
-.. include:: docs/dev-state.rst
+.. image:: https://img.shields.io/github/license/er1iang/hfut_stu_lib.svg
+    :target: https://github.com/er1iang/hfut_stu_lib/blob/master/LICENSE
+
+.. image:: https://img.shields.io/pypi/v/hfut_stu_lib.svg
+    :target: https://pypi.python.org/pypi/hfut_stu_lib
+
+.. image:: https://img.shields.io/pypi/dm/hfut_stu_lib.svg
+    :target: https://pypi.python.org/pypi/hfut_stu_lib
+
+.. image:: https://img.shields.io/travis/er1iang/hfut_stu_lib.svg
+    :target: https://travis-ci.org/er1iang/hfut_stu_lib
+
+.. image:: https://landscape.io/github/er1iang/hfut_stu_lib/master/landscape.svg?style#flat
+    :target: https://landscape.io/github/er1iang/hfut_stu_lib/master
+
+.. image:: https://img.shields.io/coveralls/er1iang/hfut_stu_lib.svg
+    :target: https://coveralls.io/github/er1iang/hfut_stu_lib?branch=master
 
 hfut_stu_lib provided full-featured interfaces for the educational administration system of HeFei University of Technology.
 
@@ -17,13 +33,7 @@ hfut_stu_lib 提供了合肥工业大学教务系统学生端接口并提供了�
 文档
 -----
 
-完整文档位于
-
-.. image:: https://readthedocs.org/projects/hfut-stu-lib/badge/?version=latest
-    :target: http://hfut-stu-lib.readthedocs.org/zh/latest/?badge=latest
-    :alt: http://hfut_stu_lib.readthedocs.org/
-
- ,你只要花一点时间就能了解整个项目
+完整文档位于 http://hfut-stu-lib.readthedocs.org ,你只要花一点时间就能了解整个项目
 
 
 **更新日志请查看:** `HISTORY.rst <https://github.com/er1iang/hfut_stu_lib/blob/master/HISTORY.rst>`_
