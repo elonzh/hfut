@@ -12,6 +12,3 @@
 
 .. image:: https://landscape.io/github/er1iang/hfut_stu_lib/master/landscape.svg?style#flat
     :target: https://landscape.io/github/er1iang/hfut_stu_lib/master
-
-.. image:: https://img.shields.io/coveralls/er1iang/hfut_stu_lib.svg
-    :target: https://coveralls.io/github/er1iang/hfut_stu_lib?branch=master
