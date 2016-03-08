@@ -11,7 +11,7 @@ from .log import *
 from .models import *
 
 __title__ = 'hfut_stu_lib'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 __author__ = 'erliang'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2015-2016 erliang'

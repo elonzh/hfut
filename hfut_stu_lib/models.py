@@ -102,7 +102,7 @@ class BaseSession(requests.Session):
                       'AppleWebKit/537.36 (KHTML, like Gecko) '
                       'Chrome/45.0.2454.101 Safari/537.36'
     }
-    html_parser = 'lxml'
+    html_parser = 'html.parser'
 
     def api_request(self, method, url, params=None, data=None, headers=None, cookies=None, files=None, auth=None,
                     timeout=None, allow_redirects=True, proxies=None, hooks=None, stream=None, verify=None, cert=None,
@@ -139,11 +139,11 @@ class GuestSession(BaseSession):
         method = 'get'
         url = 'student/asp/s_welcome.asp'
         response = self.api_request(method, url)
-
-        ss = SoupStrainer('table', height='85%')
-        bs = BeautifulSoup(response.text, self.html_parser, parse_only=ss)
+        # 学期后有一个 </br> 便签, html.parser 会私自的将它替换为 </table> 导致无获取后面的 html
+        # ss = SoupStrainer('table', height='85%')
+        bs = BeautifulSoup(response.text, self.html_parser)
         text = bs.get_text(strip=True)
-        term_pattern = re.compile(r'\d{4}-\d{4}学年第(一|二)学期')
+        term_pattern = re.compile(r'现在是\d{4}-\d{4}学年第(一|二)学期')
         term = term_pattern.search(text).group()
         plan_pattern = re.compile(
             r'第(\d)轮:'
@@ -167,6 +167,7 @@ class GuestSession(BaseSession):
             # plans.append(dict(zip(('轮数', '开始', '结束'), (int(p[0]), start, end))))
             # 结果是有顺序的
             plans.append((start, end))
+        assert plans
         result = {
             '当前学期': term,
             '选课计划': plans,
@@ -229,27 +230,25 @@ class GuestSession(BaseSession):
         page = response.text
         ss = SoupStrainer('table', width='600')
         bs = BeautifulSoup(page, self.html_parser, parse_only=ss)
-        # 有三行
+        # 有三行 , 教学班号	课程名称	课程类型	学分  开课单位	校区	起止周	考核类型  性别限制	选中人数
         key_list = [list(tr.stripped_strings) for tr in bs.find_all('tr', bgcolor='#B4B9B9')]
         assert len(key_list) == 3
-        # 有六行, 前三行与 key_list 对应, 后四行是单行属性, 键与值在同一行
+        # 有7行, 前三行与 key_list 对应, 后四行是单行属性, 键与值在同一行
         trs = bs.find_all('tr', bgcolor='#D6D3CE')
         # 最后的 备注, 禁选范围 两行外面包裹了一个 'tr' bgcolor='#D6D3CE' 时间地点 ......
         # 如果使用 lxml 作为解析器, 会自动纠正错误
-        # tr4 = trs[4]
-        # special_kv = tuple(tr4.stripped_strings)[:2]
-        # trs.remove(tr4)
-
-        value_list = parse_tr_strs(trs)
-        assert len(value_list) == 7
-
         # 前三行, 注意 value_list 第三行是有两个单元格为 None,
+        value_list = parse_tr_strs(trs[:3])
         # Python3 的 map 返回的是生成器, 不会立即产生结果
         # map(lambda seq: class_info.update(dict(zip(seq[0], seq[1]))), zip(key_list, value_list))
         class_info = {k: v for k, v in zip(flatten_list(key_list), flatten_list(value_list))}
         # 后四行
-        class_info.update(value_list[3:])
-        # class_info.update((special_kv,))
+        last_4_lines = [list(tr.stripped_strings) for tr in trs[3:7]]
+        last_4_lines[1] = last_4_lines[1][:-(len(last_4_lines[2]) + len(last_4_lines[3]))]
+        for kv in last_4_lines:
+            k = kv[0]
+            v = None if len(kv) == 1 else kv[1]
+            class_info[k] = v
         return APIResult(class_info, response)
 
     def search_course(self, xqdm, kcdm=None, kcmc=None):

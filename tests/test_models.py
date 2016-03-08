@@ -24,6 +24,8 @@ class TestGuest(TestBase):
                 '学分', '课程类型', '校区', '选中人数', '起止周']
         res = self.session.get_class_info('026', '0400073B', '0001')
         self.assert_dict_keys(res, keys)
+        res = self.session.get_class_info('028', '0532142B', '0001')
+        self.assert_dict_keys(res, keys)
 
     def test_search_course(self):
         keys = ['班级容量', '教学班号', '课程名称', '任课教师', '课程代码', '课程类型', '序号']
