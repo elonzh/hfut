@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import pytest
 
 from bs4 import BeautifulSoup
-from hfut_stu_lib import parser
+from hfut_stu_lib import parser, BaseSession
 
 
 class TestParser(object):
@@ -12,4 +12,4 @@ class TestParser(object):
         assert parser.parse_tr_strs(BeautifulSoup(single_tag, 'lxml').tr) == ['Fuck!']
         wrong_tag = "<tr><td><font>Fuck!<font/><font>You!<font/></td></tr>"
         with pytest.raises(ValueError):
-            parser.parse_tr_strs(BeautifulSoup(wrong_tag, 'lxml').tr)
+            parser.parse_tr_strs(BeautifulSoup(wrong_tag, BaseSession.html_parser).tr)
