@@ -12,9 +12,10 @@ install:
   - "pip install -r dev-requirements.txt"
 # command to run tests
 script:
-  - py.test
-after_success:
-  - coveralls
+#  - py.test
+  - echo "online test disabled"
+#after_success:
+#  - coveralls
 notifications:
     webhooks:
       - https://jianliao.com/v2/services/webhook/3e1779ce20f15f1337b107784b043751728ed9e1

@@ -13,11 +13,17 @@ class TestAPIResult(TestBase):
 class TestGuest(TestBase):
     def test_get_class_students(self):
         keys = ['学期', '班级名称', '学生']
-        res = self.session.get_class_students('025', '0400073B', '0001')
+        # 电子电路课程设计A0001班
+        kcdm = '0400073B'
+        jxbh = '0001'
+        res = self.session.get_class_students('025', kcdm, jxbh)
         assert res.data is None
-        res = self.session.get_class_students('026', '0400073B', '0001')
+        res = self.session.get_class_students('026', kcdm, jxbh)
         self.assert_dict_keys(res, keys)
-        assert len(res['学生']) == 45
+        if self.session.is_hefei:
+            assert len(res['学生']) == 40
+        else:
+            assert len(res['学生']) == 45
 
     def test_get_class_info(self):
         keys = ['时间地点', '开课单位', '禁选范围', '考核类型', '性别限制', '教学班号', '课程名称', '优选范围', '备 注',
@@ -50,12 +56,17 @@ class TestGuest(TestBase):
     def test_get_teacher_info(self):
         keys = ['教研室', '教学课程', '学历', '教龄', '教师寄语', '简 历', '照片', '科研方向', '出生', '姓名',
                 '联系电话', '职称', '电子邮件', '性别', '学位', '院系']
-        res = self.session.get_teacher_info('12000198')
+        # 张燕子 在两个校区都有记录且教师号一致
+        jsh = '12000199'
+        res = self.session.get_teacher_info(jsh)
         self.assert_dict_keys(res, keys)
 
     def test_get_course_classes(self):
         keys = ['起止周', '考核类型', '教学班附加信息', '课程容量', '选中人数', '教学班号', '禁选专业', '教师', '校区', '优选范围', '开课时间,开课地点']
-        self.assert_every_keys(self.session.get_course_classes('9900039X')['可选班级'], keys)
+        if self.session.is_hefei:
+            self.assert_every_keys(self.session.get_course_classes('5100016X')['可选班级'], keys)
+        else:
+            self.assert_every_keys(self.session.get_course_classes('9900039X')['可选班级'], keys)
 
     def test_get_entire_curriculum(self):
         res = self.session.get_entire_curriculum('028')
@@ -97,7 +108,10 @@ class TestStudent(TestBase):
         self.assert_every_keys(res, keys)
 
     def test_change_password(self):
-        password = self.session.password
+        if self.session.is_hefei:
+            password = '2013cym'
+        else:
+            password = self.session.password
         # 原密码不正确
         assert self.session.change_password('123', '123456', '123456').data is False
         # 新密码太短

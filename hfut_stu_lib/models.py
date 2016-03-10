@@ -12,20 +12,18 @@ hfut_stu_lib 核心的模块, 包括了 :class:`models.APIResult` 和包含各�
 from __future__ import unicode_literals, division
 import os
 import re
+
 import six
 import json
 import time
 import requests
 from bs4 import SoupStrainer, BeautifulSoup
 
+from . import XUANCHENG_HOST, HEFEI_HOST, STUDENT, TEACHER, ADMIN, TERM_PATTERN
 from .log import logger
 from .parser import parse_tr_strs, flatten_list, dict_list_2_tuple_set, parse_course
 
-__all__ = ['APIResult', 'BaseSession', 'GuestSession', 'AuthSession', 'StudentSession', 'ADMIN', 'STUDENT', 'TEACHER']
-
-ADMIN = 'admin'
-STUDENT = 'student'
-TEACHER = 'teacher'
+__all__ = ['APIResult', 'BaseSession', 'GuestSession', 'AuthSession', 'StudentSession']
 
 
 @six.python_2_unicode_compatible
@@ -85,17 +83,17 @@ class APIResult(object):
             return self.data.__getattribute__(item)
 
     def __len__(self):
-        return self.data.__len__()
+        return len(self.data)
 
     def __bool__(self):
-        return self.data.__bool__()
+        return bool(self.data)
 
 
 class BaseSession(requests.Session):
     """
     所有接口会话类的基类
     """
-    host = 'http://222.195.8.201/'
+    host = None
     site_encoding = 'gbk'
     default_headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) '
@@ -121,17 +119,23 @@ class BaseSession(requests.Session):
         logger.debug('[%s] %s 请求成功,请求耗时 %d ms', method, url, response.elapsed.total_seconds() * 1000)
         return response
 
-    def __init__(self):
-        # todo: 初始化时根据合肥选择不同的地址
+    def __init__(self, is_hefei):
         super(BaseSession, self).__init__()
         self.headers = self.default_headers
+
+        assert isinstance(is_hefei, bool)
+        # 初始化时根据合肥选择不同的地址
+        if is_hefei:
+            self.host = HEFEI_HOST
+        else:
+            self.host = XUANCHENG_HOST
+        self.is_hefei = is_hefei
 
 
 class GuestSession(BaseSession):
     """
     无需登录就可使用的接口
     """
-
     def get_system_state(self):
         """
         获取教务系统当前状态信息, 包括当前学期以及选课计划
@@ -143,7 +147,7 @@ class GuestSession(BaseSession):
         # ss = SoupStrainer('table', height='85%')
         bs = BeautifulSoup(response.text, self.html_parser)
         text = bs.get_text(strip=True)
-        term_pattern = re.compile(r'现在是\d{4}-\d{4}学年第(一|二)学期')
+        term_pattern = re.compile(TERM_PATTERN)
         term = term_pattern.search(text).group()
         plan_pattern = re.compile(
             r'第(\d)轮:'
@@ -194,8 +198,7 @@ class GuestSession(BaseSession):
 
         page = response.text
         # 狗日的网页代码写错了无法正确解析标签!
-        term_p = r'\d{4}-\d{4}学年第(一|二)学期'
-        term = re.search(term_p, page)
+        term = re.search(TERM_PATTERN, page)
         class_name_p = r'[\u4e00-\u9fa5\w-]+\d{4}班'
         class_name = re.search(class_name_p, page)
         # 虽然 \S 能解决匹配失败中文的问题, 但是最后的结果还是乱码的
@@ -383,9 +386,11 @@ class GuestSession(BaseSession):
             cls_info = dict(zip(info_trs[0].stripped_strings, parse_tr_strs([info_trs[1]])))
             # 选中人数 课程容量
             for s in info_trs[2].stripped_strings:
-                kv = [v.strip() for v in s.split(':')]
+                kv = [v.strip() for v in s.split(':', 1)]
                 cls_info[kv[0]] = int(kv[1]) if kv[1] else None
-            cls_info.update([(v.strip() or None for v in s.split('：')) for s in info_trs[5].stripped_strings])
+            # 教学班附加信息
+            # 教学班附加信息：屯溪路校区 上课地点：体育部办公楼2楼
+            cls_info.update([(v.strip() or None for v in s.split('：', 1)) for s in info_trs[5].stripped_strings])
             # 开课时间,开课地点
             p = re.compile(r'周[一二三四五六日]:\(\d+-\d+节\) \(\d+-\d+周\).+?\d+')
             cls_info[info_trs[3].get_text(strip=True)] = p.findall(info_trs[4].get_text(strip=True))
@@ -437,17 +442,17 @@ class AuthSession(GuestSession):
     """
     用于所有需要登录的用户角色继承的基类
     """
-
-    def __init__(self, account, password, user_type):
+    def __init__(self, account, password, user_type, is_hefei=False):
         """
         :param account: 学号
         :param password: 密码
         """
         # 先初始化状态才能登陆
-        super(AuthSession, self).__init__()
+        super(AuthSession, self).__init__(is_hefei)
         self.account = account
         self.password = password
         self.user_type = user_type
+
         self.last_request_at = time.time()
         self.login_session()
 
@@ -469,21 +474,27 @@ class AuthSession(GuestSession):
         """
         登录账户
         """
-        # todo: 实现合肥校区的登录
         account = self.account
         password = self.password
         user_type = self.user_type
-
+        is_hefei = self.is_hefei
         user_type = user_type.lower()
-        assert (user_type in (STUDENT, ADMIN)) and all([account, password])
+        assert (user_type in (STUDENT, TEACHER, ADMIN)) and all([account, password])
 
-        method = 'post'
-        url = 'pass.asp'
-        allow_redirects = False
-        data = {"user": account, "password": password, "UserStyle": user_type}
+        if is_hefei and user_type == STUDENT:
+            login_data = {'IDToken1': account, 'IDToken2': password}
+            login_url = 'http://ids1.hfut.edu.cn:81/amserver/UI/Login'
+            super(AuthSession, self).api_request('post', login_url, data=login_data)
 
+            method = 'get'
+            url = 'StuIndex.asp'
+            data = None
+        else:
+            method = 'post'
+            url = 'pass.asp'
+            data = {"user": account, "password": password, "UserStyle": user_type}
         # 使用重载的 api_request 会造成递归调用
-        response = super(AuthSession, self).api_request(method, url, data=data, allow_redirects=allow_redirects)
+        response = super(AuthSession, self).api_request(method, url, data=data, allow_redirects=False)
         logged_in = response.status_code == 302
         if not logged_in:
             if 'SQL通用防注入系统' in response.text:
@@ -524,12 +535,12 @@ class StudentSession(AuthSession):
     学生教务接口, 继承了 :class:`models.GuestSession` 的所有接口, 因此一般推荐使用这个类
     """
 
-    def __init__(self, account, password):
+    def __init__(self, account, password, is_hefei=False):
         """
         :param account: 学号
         :param password: 账号密码
         """
-        super(StudentSession, self).__init__(account, password, STUDENT)
+        super(StudentSession, self).__init__(account, password, STUDENT, is_hefei)
 
     def __str__(self):
         return '<StudentSession for [{user_type}]{account}>'.format(account=self.account, user_type=self.user_type)
@@ -578,7 +589,7 @@ class StudentSession(AuthSession):
         value_lines[1].extend(value_lines[0])
         kvs = []
         for cell in value_lines[1][:-1]:
-            kv_tuple = (v.strip() for v in cell.split(':'))
+            kv_tuple = (v.strip() for v in cell.split(':', 1))
             kvs.append(kv_tuple)
         stu_info.update(kvs)
 
@@ -666,7 +677,7 @@ class StudentSession(AuthSession):
 
     def change_password(self, oldpwd, newpwd, new2pwd):
         """
-        修改密码
+        修改教务密码, **注意**合肥校区使用信息中心账号登录, 与教务密码不一致
 
         :param self: AuthSession 对象
         :param oldpwd: 旧密码
@@ -675,7 +686,7 @@ class StudentSession(AuthSession):
         """
         p = re.compile(r'^[\da-z]{6,12}$')
         # 若不满足密码修改条件便不做请求
-        if oldpwd != self.password or newpwd != new2pwd or not p.match(newpwd):
+        if newpwd != new2pwd or not p.match(newpwd):
             return APIResult(False)
         # 若新密码与原密码相同, 直接返回 True
         if newpwd == oldpwd:
@@ -772,7 +783,7 @@ class StudentSession(AuthSession):
             course = dict(zip(keys, values))
             course['课程代码'] = course['课程代码'].upper()
             course['学分'] = float(course['学分'])
-            course['费用'] = int(course['费用'])
+            course['费用'] = float(course['费用'])
             courses.append(course)
         return APIResult(courses, response)
 

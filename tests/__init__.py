@@ -9,7 +9,7 @@ logger.setLevel(logging.DEBUG)
 
 
 class TestBase(object):
-    session = StudentSession(2013217413, 'fuckyou')
+    session = None
 
     def assert_every_keys(self, seq, keys):
         keys.sort()

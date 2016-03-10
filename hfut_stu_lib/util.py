@@ -9,6 +9,7 @@ import requests
 import requests.exceptions
 from threading import Thread
 
+from . import XUANCHENG_HOST, HEFEI_HOST, TERM_PATTERN
 from .log import logger
 
 __all__ = ['get_point', 'cal_gpa', 'cal_term_code', 'term_str2code', 'get_host_speed_rank']
@@ -117,7 +118,7 @@ def term_str2code(term_str):
     :param term_str: 形如 "2012-2013学年第二学期" 的学期字符串
     :return: 形如 "022" 的学期代码
     """
-    term_pattern = re.compile(r'(\d{4})-\d{4}学年\s*第(一|二)学期')
+    term_pattern = re.compile(TERM_PATTERN)
     result = term_pattern.match(term_str).groups()
     year = int(result[0])
     return cal_term_code(year, result[1] == '一')
@@ -183,3 +184,24 @@ def get_host_speed_rank(exclude=None, timeout=(5, 10)):
 
     available_hosts.sort()
     return available_hosts
+
+
+# 不是很可靠也没必要
+# def guess_is_hefei(student_id):
+#     """
+#     根据学号猜测属于哪个校区, 注意可能无法得到结果
+#
+#     :param student_id: 学生学号
+#     :return: 合肥校区为 True ,宣城校区为 False, 猜测失败为 None
+#     """
+#     student_id = six.text_type(student_id)
+#     fmt = 'student/photo/{}/{}.JPG'.format(student_id[0:4], student_id)
+#     is_hefei = None
+#     urljoin = six.moves.urllib.parse.urljoin
+#     if requests.get(urljoin(XUANCHENG_HOST, fmt)).ok:
+#         is_hefei = False
+#     elif requests.get(urljoin(HEFEI_HOST, fmt)).ok:
+#         is_hefei = True
+#     else:
+#         logger.warning('没有猜测到这个学号属于哪个校区!')
+#     return is_hefei

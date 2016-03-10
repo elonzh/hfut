@@ -10,11 +10,11 @@
 -------------
 
 如果你在 hfut_stu_lib 中注意到了一些意想不到的行为，或者希望看到一个新的功能支持，请查看
-`在 GitHub 上提交问题 <https://github.com/er1iang/hfut_stu_lib/issues>`_.
+`在 GitHub 上提交 Issue <https://github.com/er1iang/hfut_stu_lib/issues>`_.
 
 
 邮件
 ------
 
 我更乐意回答关于 hfut_stu_lib 的个人或者更深入的问题.
-`eviler_liang@foxmail.com <mailto:eviler_liang@foxmail.com>`_.
+`eviler_liang@foxmail.com <mailto:dev@erliang.me>`_.

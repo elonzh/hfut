@@ -169,3 +169,5 @@ target/
 
 # Custom
 func_factory.py
+run_tests.py
+tests/

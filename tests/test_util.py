@@ -64,3 +64,8 @@ class TestUtil(TestBase):
         with pytest.raises(ValueError):
             util.get_host_speed_rank(['qq.com'])
         assert util.get_host_speed_rank(timeout=0) == []
+
+    # def test_guess_is_hefei(self):
+    #     assert util.guess_is_hefei(2013217413) is False
+    #     assert util.guess_is_hefei(2013211263) is True
+    #     assert util.guess_is_hefei(1234567890) is None

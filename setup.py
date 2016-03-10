@@ -1,32 +1,29 @@
 # -*- coding:utf-8 -*-
 # 在 Python2 下使用 unicode_literals 会导致自定义命令出错
 # from __future__ import unicode_literals
-import sys
-
 import hfut_stu_lib
 
 from setuptools import setup, find_packages
 
-from setuptools.command.test import test as TestCommand
+# from setuptools.command.test import test as TestCommand
 
-
-class PyTest(TestCommand):
-    user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
-
-    def initialize_options(self):
-        TestCommand.initialize_options(self)
-        self.pytest_args = [
-            '--cov-config', '.coveragerc',
-            '--cov-report', 'html',
-            '--cov=hfut_stu_lib', 'tests/',
-            '--doctest-modules'
-        ]
-
-    def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
-        import pytest
-        errno = pytest.main(self.pytest_args)
-        sys.exit(errno)
+# class PyTest(TestCommand):
+#     user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
+#
+#     def initialize_options(self):
+#         TestCommand.initialize_options(self)
+#         self.pytest_args = [
+#             '--cov-config', '.coveragerc',
+#             '--cov-report', 'html',
+#             '--cov=hfut_stu_lib', 'tests/',
+#             '--doctest-modules'
+#         ]
+#
+#     def run_tests(self):
+#         # import here, cause outside the eggs aren't loaded
+#         import pytest
+#         errno = pytest.main(self.pytest_args)
+#         sys.exit(errno)
 
 
 with open('README.rst', 'rb') as fp:
@@ -35,28 +32,28 @@ with open('README.rst', 'rb') as fp:
 with open('requirements.txt') as fp:
     install_requires = fp.read().split()
 
-with open('dev-requirements.txt') as fp:
-    tests_require = fp.read().split()
+# with open('dev-requirements.txt') as fp:
+#     tests_require = fp.read().split()
 
 setup(
     name=hfut_stu_lib.__title__,
     version=hfut_stu_lib.__version__,
-    keywords=('hfut', 'spider', 'edu', 'student', 'interface'),
-    description='Provided full-featured interfaces for the educational administration system of HFUT.',
+    keywords=('hfut', 'edu', 'student', 'interface'),
+    description=hfut_stu_lib.__doc__,
     long_description=long_description,
     license=hfut_stu_lib.__license__,
 
     author=hfut_stu_lib.__author__,
-    author_email='eviler_liang@foxmail.com',
-    url='https://github.com/er1iang/hfut-stu-lib',
+    author_email=hfut_stu_lib.__author_email__,
+    url=hfut_stu_lib.__url__,
 
     packages=find_packages(),
     platforms='any',
 
     # setup_requires=['pytest-runner'],
     install_requires=install_requires,
-    tests_require=tests_require,
-    cmdclass={'test': PyTest},
+    # tests_require=tests_require,
+    # cmdclass={'test': PyTest},
     # test_suite='tests',
 
     # data_files=[('', ['README.rst', 'CHANGES.md', 'LICENSE'])],
