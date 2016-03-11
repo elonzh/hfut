@@ -10,7 +10,7 @@ QQ 群
 
 你可以点这 `加入QQ群 <http://shang.qq.com/wpa/qunwpa?idkey=649d2da17d209065a5e662eb951f5b8ab971b7ed0daec0fe17e4db7b660b902d>`_ 或者扫描二维码加入我们.
 
-.. image:: ../_static/hfut_stu_lib讨论群群二维码.png
+.. image:: ../_static/qq_group_qr.png
 
 
 在 GitHub 提交 Issue
