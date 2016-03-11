@@ -25,6 +25,16 @@ hfut_stu_lib 提供了合肥工业大学教务系统学生端接口并提供了�
 
 欢迎编程爱好者star或者fork, 同时为想学 Python 的新手提供一些指导.
 
+你可以通过扫描二维码
+
+.. image:: docs\_static\hfut_stu_lib讨论群群二维码.png
+
+或点击这里
+
+.. raw:: html
+
+    <a target="_blank" href="http://shang.qq.com/wpa/qunwpa?idkey=649d2da17d209065a5e662eb951f5b8ab971b7ed0daec0fe17e4db7b660b902d"><img border="0" src="http://pub.idqqimg.com/wpa/images/group.png" alt="hfut_stu_lib讨论群" title="hfut_stu_lib讨论群"></a>
+
 
 功能特性
 --------------------
