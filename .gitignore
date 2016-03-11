@@ -171,3 +171,5 @@ target/
 func_factory.py
 run_tests.py
 tests/
+urls.py
+examples/img
