@@ -26,6 +26,15 @@ hfut_stu_lib provided full-featured interfaces for the educational administratio
 
 hfut_stu_lib 提供了合肥工业大学教务系统学生端接口并提供了方便开发者开发围绕学生数据的一些工具.
 
+
+QQ 群
+----------------
+
+你可以点这 `加入QQ群 <http://shang.qq.com/wpa/qunwpa?idkey=649d2da17d209065a5e662eb951f5b8ab971b7ed0daec0fe17e4db7b660b902d>`_ 或者扫描二维码加入我们.
+
+.. image:: _static/hfut_stu_lib讨论群群二维码.png
+
+
 功能特性
 --------------------
 
