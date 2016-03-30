@@ -12,16 +12,15 @@ hfut_stu_lib 核心的模块, 包括了 :class:`models.APIResult` 和包含各�
 from __future__ import unicode_literals, division
 import os
 import re
-
 import six
 import json
 import time
 import requests
 from bs4 import SoupStrainer, BeautifulSoup
 
-from . import XUANCHENG_HOST, HEFEI_HOST, STUDENT, TEACHER, ADMIN, TERM_PATTERN
-from .log import logger
-from .parser import parse_tr_strs, flatten_list, dict_list_2_tuple_set, parse_course
+from .values import XUANCHENG_HOST, HEFEI_HOST, STUDENT, TEACHER, ADMIN, TERM_PATTERN
+from .log import logger, log_result_not_found
+from .parser import parse_tr_strs, flatten_list, dict_list_2_tuple_set, parse_course, safe_zip
 
 __all__ = ['APIResult', 'BaseSession', 'GuestSession', 'AuthSession', 'StudentSession']
 
@@ -136,9 +135,12 @@ class GuestSession(BaseSession):
     """
     无需登录就可使用的接口
     """
+
     def get_system_state(self):
         """
         获取教务系统当前状态信息, 包括当前学期以及选课计划
+
+        @structure {'当前学期': str, '选课计划': list, '当前轮数': int or None}
         """
         method = 'get'
         url = 'student/asp/s_welcome.asp'
@@ -177,13 +179,13 @@ class GuestSession(BaseSession):
             '选课计划': plans,
             '当前轮数': current_round
         }
-
-        logger.debug(result)
         return APIResult(result, response)
 
     def get_class_students(self, xqdm, kcdm, jxbh):
         """
         教学班查询, 查询指定教学班的所有学生
+
+        @structure {'学期': str, '班级名称': str, '学生': [{'姓名': str, '学号': int, '序号': int}]}
 
         :param xqdm: 学期代码
         :param kcdm: 课程代码
@@ -205,10 +207,10 @@ class GuestSession(BaseSession):
         stu_p = r'>\s*?(\d{1,3})\s*?</.*?>\s*?(\d{10})\s*?</.*?>\s*?([\u4e00-\u9fa5*]+)\s*?</'
         stus = re.findall(stu_p, page, re.DOTALL)
         if term and class_name and stus:
-            stus = [{'序号': v[0], '学号': v[1], '姓名': v[2]} for v in stus]
+            stus = [{'序号': int(v[0]), '学号': int(v[1]), '姓名': v[2]} for v in stus]
             return APIResult({'学期': term.group(), '班级名称': class_name.group(), '学生': stus}, response)
         elif page.find('无此教学班') != -1:
-            logger.warning('无此教学班, 请检查你的参数')
+            log_result_not_found(page)
             return APIResult(response=response)
         else:
             msg = '\n'.join(['没有匹配到信息, 可能出现了一些问题', page])
@@ -218,6 +220,9 @@ class GuestSession(BaseSession):
     def get_class_info(self, xqdm, kcdm, jxbh):
         """
         获取教学班详情, 包括上课时间地点, 考查方式, 老师, 选中人数, 课程容量等等信息
+
+        @structure {'校区': str,'开课单位': str,'考核类型': str,'课程类型': str,'课程名称': str,'教学班号': str,'起止周': str,
+        '时间地点': str,'学分': float,'性别限制': str,'优选范围': str,'禁选范围': str,'选中人数': int,'备 注': str}
 
         :param xqdm: 学期代码
         :param kcdm: 课程代码
@@ -235,7 +240,9 @@ class GuestSession(BaseSession):
         bs = BeautifulSoup(page, self.html_parser, parse_only=ss)
         # 有三行 , 教学班号	课程名称	课程类型	学分  开课单位	校区	起止周	考核类型  性别限制	选中人数
         key_list = [list(tr.stripped_strings) for tr in bs.find_all('tr', bgcolor='#B4B9B9')]
-        assert len(key_list) == 3
+        if len(key_list) != 3:
+            log_result_not_found(page)
+            return APIResult(response=response)
         # 有7行, 前三行与 key_list 对应, 后四行是单行属性, 键与值在同一行
         trs = bs.find_all('tr', bgcolor='#D6D3CE')
         # 最后的 备注, 禁选范围 两行外面包裹了一个 'tr' bgcolor='#D6D3CE' 时间地点 ......
@@ -244,7 +251,11 @@ class GuestSession(BaseSession):
         value_list = parse_tr_strs(trs[:3])
         # Python3 的 map 返回的是生成器, 不会立即产生结果
         # map(lambda seq: class_info.update(dict(zip(seq[0], seq[1]))), zip(key_list, value_list))
-        class_info = {k: v for k, v in zip(flatten_list(key_list), flatten_list(value_list))}
+        keys = flatten_list(key_list)
+        values = flatten_list(value_list)
+        class_info = dict(safe_zip(keys, values, 10, 12))
+        class_info['学分'] = float(class_info['学分'])
+        class_info['选中人数'] = int(class_info['选中人数'])
         # 后四行
         last_4_lines = [list(tr.stripped_strings) for tr in trs[3:7]]
         last_4_lines[1] = last_4_lines[1][:-(len(last_4_lines[2]) + len(last_4_lines[3]))]
@@ -257,6 +268,8 @@ class GuestSession(BaseSession):
     def search_course(self, xqdm, kcdm=None, kcmc=None):
         """
         课程查询
+
+        @structure [{'任课教师': str, '课程名称': str, '教学班号': str, '课程代码': str, '班级容量': int, '序号': int}]
 
         :param xqdm: 学期代码
         :param kcdm: 课程代码
@@ -280,19 +293,23 @@ class GuestSession(BaseSession):
         if title and trs:
             courses = []
             keys = tuple(title.stripped_strings)
-            value_list = [tr.stripped_strings for tr in trs]
+            value_list = parse_tr_strs(trs)
             for values in value_list:
-                course = dict(zip(keys, values))
+                course = dict(safe_zip(keys, values))
                 course['课程代码'] = course['课程代码'].upper()
                 courses.append(course)
+                course['序号'] = int(course['序号'])
+                course['班级容量'] = int(course['班级容量'])
             return APIResult(courses, response)
         else:
-            logger.warning('没有找到结果\n %s', data)
+            log_result_not_found(page)
             return APIResult(response=response)
 
     def get_teaching_plan(self, xqdm, zydm, kclx='b'):
         """
         专业教学计划查询
+
+        @structure [{'开课单位': str, '学时': int, '课程名称': str, '课程代码': str, '学分': float, '序号': int}]
 
         :param xqdm: 学期代码
         :param kclx: 课程类型参数,只有两个值 b:专业必修课, x:全校公选课
@@ -312,17 +329,27 @@ class GuestSession(BaseSession):
         bs = BeautifulSoup(page, self.html_parser, parse_only=ss)
         trs = bs.find_all('tr')
         keys = tuple(trs[1].stripped_strings)
-        value_list = [tr.stripped_strings for tr in trs[2:]]
+        if len(keys) != 6:
+            log_result_not_found(page)
+            return APIResult(response=response)
+
+        value_list = parse_tr_strs(trs[2:])
         teaching_plan = []
         for values in value_list:
-            plan = dict(zip(keys, values))
+            plan = dict(safe_zip(keys, values))
             plan['课程代码'] = plan['课程代码'].upper()
+            plan['学时'] = int(plan['学时'])
+            plan['学分'] = float(plan['学分'])
+            plan['序号'] = int(plan['序号'])
             teaching_plan.append(plan)
         return APIResult(teaching_plan, response)
 
     def get_teacher_info(self, jsh):
         """
         教师信息查询
+
+        @structure {'教研室': str, '教学课程': str, '学历': str, '教龄': str, '教师寄语': str, '简 历': str, '照片': str, '科研方向': str, '出生': str, '姓名': str,
+                '联系电话': [str], '职称': str, '电子邮件': str, '性别': str, '学位': str, '院系': str]
 
         :param jsh: 8位教师号, 例如 '05000162'
         """
@@ -334,7 +361,9 @@ class GuestSession(BaseSession):
         page = response.text
         ss = SoupStrainer('table')
         bs = BeautifulSoup(page, self.html_parser, parse_only=ss)
-
+        if not bs.text:
+            log_result_not_found(page)
+            return APIResult(response=response)
         value_list = parse_tr_strs(bs.find_all('tr'))
         # 第一行最后有个照片项
         teacher_info = {'照片': value_list[0].pop()}
@@ -353,6 +382,10 @@ class GuestSession(BaseSession):
     def get_course_classes(self, kcdm):
         """
         获取选课系统中课程的可选教学班级
+
+        @structure {'可选班级': [{'起止周': str, '考核类型': str, '教学班附加信息': str, '课程容量': int, '选中人数': int,
+         '教学班号': str, '禁选专业': str, '教师': [str], '校区': str, '优选范围': [str], '开课时间,开课地点': [str]}],
+        '课程代码': str, '课程名称': str}
 
         :param kcdm: 课程代码
         """
@@ -383,7 +416,7 @@ class GuestSession(BaseSession):
             class_info_table = BeautifulSoup(tds[1]['alt'], self.html_parser)
             info_trs = class_info_table.select('tr')
             # 校区 起止周 考核类型 禁选专业
-            cls_info = dict(zip(info_trs[0].stripped_strings, parse_tr_strs([info_trs[1]])))
+            cls_info = dict(safe_zip(info_trs[0].stripped_strings, parse_tr_strs([info_trs[1]])[0]))
             # 选中人数 课程容量
             for s in info_trs[2].stripped_strings:
                 kv = [v.strip() for v in s.split(':', 1)]
@@ -395,6 +428,8 @@ class GuestSession(BaseSession):
             p = re.compile(r'周[一二三四五六日]:\(\d+-\d+节\) \(\d+-\d+周\).+?\d+')
             cls_info[info_trs[3].get_text(strip=True)] = p.findall(info_trs[4].get_text(strip=True))
 
+            cls_info['课程容量'] = int(cls_info['课程容量'])
+            cls_info['选中人数'] = int(cls_info['选中人数'])
             cls_info['教学班号'] = tds[1].string.strip()
             cls_info['教师'] = [s.strip() for s in tds[2].text.split(',')]
             cls_info['优选范围'] = [s.strip() for s in tds[3].text.split(',')]
@@ -407,6 +442,8 @@ class GuestSession(BaseSession):
     def get_entire_curriculum(self, xqdm):
         """
         获取全校的学期课程表
+
+        @structure [[[{'上课周数': [int], '课程名称': str, '课程地点': str}]]]
 
         :param xqdm: 学期代码
         """
@@ -442,6 +479,7 @@ class AuthSession(GuestSession):
     """
     用于所有需要登录的用户角色继承的基类
     """
+
     def __init__(self, account, password, user_type, is_hefei=False):
         """
         :param account: 学号
@@ -548,6 +586,9 @@ class StudentSession(AuthSession):
     def get_code(self):
         """
         获取当前所有的学期, 学期以及对应的学期代码, 注意如果你只是需要获取某个学期的代码的话请使用 :func:`util.cal_term_code`
+
+        @structure {'专业': [{'专业代码': str, '专业名称': str}], '学期': [{'学期代码': str, '学期名称': str}]}
+
         """
         method = 'get'
         url = 'student/asp/xqjh.asp'
@@ -567,6 +608,11 @@ class StudentSession(AuthSession):
     def get_my_info(self):
         """
         获取个人信息
+
+        @structure {'婚姻状况': str, '毕业高中': str, '专业简称': str, '家庭地址': str, '能否选课': str, '政治面貌': str,
+         '性别': str, '学院简称': str, '外语语种': str, '入学方式': str, '照片': str, '联系电话': str, '姓名': str,
+         '入学时间': str, '籍贯': str, '民族': str, '学号': int, '家庭电话': str, '生源地': str, '出生日期': str,
+         '学籍状态': str, '身份证号': str, '考生号': int, '班级简称': str, '注册状态': str}
         """
         method = 'get'
         url = 'student/asp/xsxxxxx.asp'
@@ -594,18 +640,22 @@ class StudentSession(AuthSession):
         stu_info.update(kvs)
 
         # 解析后面对应的信息
-        for line in zip(key_lines, value_lines[2:]):
-            stu_info.update(zip(line[0], line[1]))
+        for line in safe_zip(key_lines, value_lines[2:]):
+            stu_info.update(safe_zip(line[0], line[1]))
 
         # 添加照片项
         photo_url = six.moves.urllib.parse.urljoin(response.url, bs.select_one('td[rowspan=6] img')['src'])
         stu_info['照片'] = photo_url
 
+        stu_info['学号'] = int(stu_info['学号'])
+        stu_info['考生号'] = int(stu_info['考生号'])
         return APIResult(stu_info, response)
 
     def get_my_achievements(self):
         """
         获取个人成绩
+
+        @structure [{'教学班号': str, '课程名称': str, '学期': str, '补考成绩': str, '课程代码': str, '学分': float, '成绩': str}]
         """
         method = 'get'
         url = 'student/asp/Select_Success.asp'
@@ -620,14 +670,17 @@ class StudentSession(AuthSession):
         values_list = parse_tr_strs(trs[1:-1])
         grades = []
         for values in values_list:
-            grade = dict(zip(keys, values))
+            grade = dict(safe_zip(keys, values))
             grade['课程代码'] = grade['课程代码'].upper()
+            grade['学分'] = float(grade['学分'])
             grades.append(grade)
         return APIResult(grades, response)
 
     def get_my_curriculum(self):
         """
         获取个人课表
+
+        @structure [[[{'上课周数': [int], '课程名称': str, '课程地点': str}]]]
         """
         method = 'get'
         url = 'student/asp/grkb1.asp'
@@ -656,6 +709,8 @@ class StudentSession(AuthSession):
     def get_my_fees(self):
         """
         收费查询
+
+        @structure [{'教学班号': str, '课程名称': str, '学期': str, '收费(元): float', '课程代码': str, '学分': float}]
         """
         method = 'get'
         url = 'student/asp/Xfsf_Count.asp'
@@ -667,17 +722,21 @@ class StudentSession(AuthSession):
 
         keys = tuple(bs.table.thead.tr.stripped_strings)
         value_trs = bs.find_all('tr', bgcolor='#D6D3CE')
-        value_list = [tr.stripped_strings for tr in value_trs]
+        value_list = parse_tr_strs(value_trs)
         feeds = []
         for values in value_list:
-            feed = dict(zip(keys, values))
+            feed = dict(safe_zip(keys, values))
             feed['课程代码'] = feed['课程代码'].upper()
+            feed['学分'] = float(feed['学分'])
+            feed['收费(元)'] = float(feed['收费(元)'])
             feeds.append(feed)
         return APIResult(feeds, response)
 
     def change_password(self, oldpwd, newpwd, new2pwd):
         """
         修改教务密码, **注意**合肥校区使用信息中心账号登录, 与教务密码不一致
+
+        @structure bool
 
         :param self: AuthSession 对象
         :param oldpwd: 旧密码
@@ -714,6 +773,8 @@ class StudentSession(AuthSession):
         """
         更新电话
 
+        @structure bool
+
         :param tel: 电话号码, 需要满足手机和普通电话的格式, 例如 `18112345678` 或者 '0791-1234567'
         """
         tel = six.text_type(tel)
@@ -737,6 +798,8 @@ class StudentSession(AuthSession):
         """
         获取可选课程, 并不判断是否选满
 
+        @structure [{'学分': float, '开课院系': str, '课程代码': str, '课程名称': str, '课程类型': str}]
+
         :param kclx: 课程类型参数,只有三个值,{x:全校公选课, b:全校必修课, jh:本专业计划},默认为'x'
         """
         if kclx not in ('x', 'b', 'jh'):
@@ -759,13 +822,15 @@ class StudentSession(AuthSession):
                       '课程名称': values[1],
                       '课程类型': values[2],
                       '开课院系': values[3],
-                      '学分': values[4]}
+                      '学分': float(values[4])}
             courses.append(course)
         return APIResult(courses, response)
 
     def get_selected_courses(self):
         """
         获取所有已选的课程
+
+        @structure [{'费用': float, '教学班号': str, '课程名称': str, '课程代码': str, '学分': float, '课程类型': str}]
         """
         method = 'get'
         url = 'student/asp/select_down_f3.asp'
@@ -778,9 +843,10 @@ class StudentSession(AuthSession):
 
         courses = []
         keys = tuple(bs.find('tr', bgcolor='#296DBD').stripped_strings)
-        value_list = [tr.stripped_strings for tr in bs.find_all('tr', bgcolor='#D6D3CE')]
+        # value_list = [tr.stripped_strings for tr in bs.find_all('tr', bgcolor='#D6D3CE')]
+        value_list = parse_tr_strs(bs.find_all('tr', bgcolor='#D6D3CE'))
         for values in value_list:
-            course = dict(zip(keys, values))
+            course = dict(safe_zip(keys, values))
             course['课程代码'] = course['课程代码'].upper()
             course['学分'] = float(course['学分'])
             course['费用'] = float(course['费用'])
@@ -791,9 +857,11 @@ class StudentSession(AuthSession):
         """
         修改个人的课程
 
+        @structure [{'费用': float, '教学班号': str, '课程名称': str, '课程代码': str, '学分': float, '课程类型': str}]
+
         :param select_courses: 形如 ``{'kcdm': '9900039X', jxbhs: ['0001', '0002']}`` 的课程代码与教学班号列表, jxbhs 可以为空代表选择所有可选班级
         :param delete_courses: 需要删除的课程代码列表, 如 ``['0200011B']``
-        :return: 选课结果, 返回选中的课程教学班列表
+        :return: 选课结果, 返回选中的课程教学班列表, 结构与 ``get_selected_courses`` 一致
         """
         t = self.get_system_state()
         if t['当前轮数'] is None:
@@ -891,6 +959,8 @@ class StudentSession(AuthSession):
         """
         检查课程是否被选
 
+        @structure [bool]
+
         :param kcdms: 课程代码列表
         :return: 与课程代码列表长度一致的布尔值列表, 已为True,未选为False
         """
@@ -904,6 +974,10 @@ class StudentSession(AuthSession):
         获取所有能够选上的课程的课程班级, 注意这个方法遍历所给出的课程和它们的可选班级, 当选中人数大于等于课程容量时表示不可选.
 
         由于请求非常耗时且一般情况下用不到, 因此默认推荐在第一轮选课结束后到第三轮选课结束之前的时间段使用, 如果你仍然坚持使用, 你将会得到一个警告.
+
+        @structure [{'可选班级': [{'起止周': str, '考核类型': str, '教学班附加信息': str, '课程容量': int, '选中人数': int,
+         '教学班号': str, '禁选专业': str, '教师': [str], '校区': str, '优选范围': [str], '开课时间,开课地点': [str]}],
+        '课程代码': str, '课程名称': str}]
 
         :param kcdms: 课程代码列表, 默认为所有可选课程的课程代码
         :param dump_result: 是否保存结果到本地

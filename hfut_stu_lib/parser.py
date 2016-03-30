@@ -5,9 +5,23 @@
 from __future__ import unicode_literals, division
 import re
 import six
-from bs4.element import Tag
+from pprint import pformat
 
 from .log import logger
+
+
+def safe_zip(iter1, iter2, iter1_len=None, iter2_len=None):
+    iter1 = tuple(iter1)
+    iter2 = tuple(iter2)
+    logger.debug('%s 与 %s 将要被 zip', iter1, iter2)
+    if iter1_len and iter2_len:
+        assert len(iter1) == iter1_len
+        assert len(iter2) == iter2_len
+    else:
+        equal_len = iter1_len or iter2_len or len(iter1)
+        assert len(iter1) == equal_len
+        assert len(iter2) == equal_len
+    return zip(iter1, iter2)
 
 
 def parse_tr_strs(trs):
@@ -18,29 +32,15 @@ def parse_tr_strs(trs):
     :param trs: <tr> 标签或标签数组, 为 :class:`bs4.element.Tag` 对象
     :return: 二维列表
     """
-    if isinstance(trs, Tag):
-        trs = [trs]
     tr_strs = []
     for tr in trs:
         strs = []
         for td in tr.find_all('td'):
-            # 使用 stripped_strings 防止 td 中还有标签
-            # 如: 不及格课程会有一个<font>标签导致tds[i].string为None
-            # <FONT COLOR=#FF0000>37    </FONT></TD>
-            # stripped_strings 是一个生成器, 没有长度
-            # 生成器迭代一次就没有了, 需要转换为 tuple 或 list 进行保存
-            s_list = tuple(td.stripped_strings)
-            l = len(s_list)
-            if l == 1:
-                strs.append(s_list[0])
-            elif l == 0:
-                strs.append(None)
-            else:
-                msg = 'td标签中含有多个字符串\n{}'.format(td)
-                logger.error(s_list)
-                raise ValueError(msg)
+            text = td.get_text(strip=True)
+            strs.append(text or None)
         tr_strs.append(strs)
-    return tr_strs if len(tr_strs) > 1 else tr_strs[0]
+    logger.debug('从行中解析出以下数据\n%s', pformat(tr_strs))
+    return tr_strs
 
 
 def flatten_list(multiply_list):
