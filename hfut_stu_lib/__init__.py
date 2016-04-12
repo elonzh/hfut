@@ -17,4 +17,4 @@ __license__ = 'MIT'
 __copyright__ = 'Copyright 2015-2016 erliang'
 
 from .log import *
-from .models import *
+from .model import *

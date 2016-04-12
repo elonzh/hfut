@@ -12,7 +12,12 @@
 使用 hfut_stu_lib 下载全校学生证件照
 -----------------------------------------------
 
-
-
 ..  literalinclude:: ../../examples/hfut_img.py
+
+在全平台使用 hfut_stu_lib 编写课表工具
+-----------------------------------------------
+
+..  literalinclude:: ../../examples/web_curriculum.py
+
+
 

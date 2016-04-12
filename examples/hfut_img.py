@@ -1,4 +1,7 @@
 # -*- coding:utf-8 -*-
+"""
+抓取全校学生的照片
+"""
 from __future__ import unicode_literals
 import six
 import threading

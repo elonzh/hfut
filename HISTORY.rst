@@ -18,6 +18,27 @@
 开发日志
 ---------------
 
+1.1.2 (20160413)
+++++++++++++++++
+
+**小的改进**
+
+- :meth:`models.APIResult.json` 支持了 `json.dumps` 的参数
+- 统一 :meth:`models.GuestSession.get_entire_curriculum` 和 :meth:`models.GuestSession.get_my_curriculum` 的代码
+- :meth:`models.GuestSession.get_entire_curriculum` 和 :meth:`models.GuestSession.get_my_curriculum` 返回值添加了起止周字段
+
+**接口改变**
+
+- :func:`parser.parse_course` 不再接受 None 值为参数
+
+**文档**
+
+- 补充例子
+
+**其他杂项**
+
+- 添加例子 ``web_curriculum.py``, 使用 bottle 编写的一个简单课表查看页面, 可以筛选每周的课程, 可以在手机上安装 qpython 并安装好 hfu_stu_lib 后在手机上运行
+
 1.1.1 (20160330)
 ++++++++++++++++
 

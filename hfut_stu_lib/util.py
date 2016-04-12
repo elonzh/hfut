@@ -10,7 +10,7 @@ import requests.exceptions
 from copy import deepcopy
 from threading import Thread
 
-from .values import TERM_PATTERN
+from .value import TERM_PATTERN
 from .log import logger
 
 __all__ = ['get_point', 'cal_gpa', 'cal_term_code', 'term_str2code', 'rank_host_speed', 'filter_curriculum']

@@ -18,11 +18,47 @@ import time
 import requests
 from bs4 import SoupStrainer, BeautifulSoup
 
-from .values import XUANCHENG_HOST, HEFEI_HOST, STUDENT, TEACHER, ADMIN, TERM_PATTERN
+from .value import XUANCHENG_HOST, HEFEI_HOST, STUDENT, TEACHER, ADMIN, TERM_PATTERN
 from .log import logger, log_result_not_found
 from .parser import parse_tr_strs, flatten_list, dict_list_2_tuple_set, parse_course, safe_zip
 
 __all__ = ['APIResult', 'BaseSession', 'GuestSession', 'AuthSession', 'StudentSession']
+
+
+def _get_curriculum(session, url, params=None):
+    """
+    通用的获取课表函数
+
+    @structure {'课表': [[[{'上课周数': [int], '课程名称': str, '课程地点': str}]]], '起始周': int, '结束周': int}
+    """
+    method = 'get'
+    response = session.api_request(method, url, params=params)
+
+    page = response.text
+    ss = SoupStrainer('table', width='840')
+    bs = BeautifulSoup(page, session.html_parser, parse_only=ss)
+    trs = bs.find_all('tr')
+    origin_list = parse_tr_strs(trs[1:])
+
+    # 顺时针反转矩阵
+    length = len(origin_list)
+    width = len(origin_list[0])
+    new_matrix = []
+    weeks = set()
+    for i in range(width):
+        newline = []
+        for j in range(length):
+            if origin_list[j][i] is None:
+                newline.append(None)
+            else:
+                courses = parse_course(origin_list[j][i])
+                for c in courses:
+                    weeks.update(c['上课周数'])
+                newline.append(courses)
+        new_matrix.append(newline)
+    # 去除第一行的序号
+    curriculum = new_matrix[1:]
+    return APIResult({'课表': curriculum, '起始周': min(weeks), '结束周': max(weeks)}, response)
 
 
 @six.python_2_unicode_compatible
@@ -40,11 +76,14 @@ class APIResult(object):
         self.response = response
         self.data = data
 
-    def json(self):
+    def json(self, skipkeys=False, ensure_ascii=False, check_circular=True,
+             allow_nan=True, cls=None, indent=None, separators=None,
+             default=None, sort_keys=False, **kw):
         """
-        将数据转换为 json 字符串
+        将数据转换为 json 字符串, 参数与 json.dumps 一致
         """
-        return json.dumps(self.data, ensure_ascii=False, sort_keys=True)
+        return json.dumps(self.data, skipkeys, ensure_ascii, check_circular, allow_nan, cls, indent, separators,
+                          default, sort_keys, **kw)
 
     def store_api_result(self, basename=None, dir_path=None, encoding='utf-8'):
         """
@@ -439,39 +478,17 @@ class GuestSession(BaseSession):
         result['可选班级'] = course_classes
         return APIResult(result, response)
 
-    def get_entire_curriculum(self, xqdm):
+    def get_entire_curriculum(self, xqdm=None):
         """
-        获取全校的学期课程表
+        获取全校的学期课程表, 当没有提供学期代码时默认返回本学期课程表
 
-        @structure [[[{'上课周数': [int], '课程名称': str, '课程地点': str}]]]
+        @structure {'课表': [[[{'上课周数': [int], '课程名称': str, '课程地点': str}]]], '起始周': int, '结束周': int}
 
         :param xqdm: 学期代码
         """
-        method = 'get'
         url = 'teacher/asp/Jskb_table.asp'
         params = {'xqdm': xqdm}
-        response = self.api_request(method, url, params)
-
-        page = response.text
-        ss = SoupStrainer('table', width='840')
-        bs = BeautifulSoup(page, self.html_parser, parse_only=ss)
-        trs = bs.find_all('tr')
-        origin_list = parse_tr_strs(trs[1:])
-
-        # 顺时针反转矩阵
-        length = len(origin_list)
-        width = len(origin_list[0])
-        new_matrix = []
-        #
-        for i in range(width):
-            newline = []
-            for j in range(length):
-                newline.append(parse_course(origin_list[j][i]))
-            new_matrix.append(newline)
-
-        # 去除第一行的序号
-        timetable = new_matrix[1:]
-        return APIResult(timetable, response)
+        return _get_curriculum(self, url, params=params)
 
 
 @six.python_2_unicode_compatible
@@ -680,31 +697,10 @@ class StudentSession(AuthSession):
         """
         获取个人课表
 
-        @structure [[[{'上课周数': [int], '课程名称': str, '课程地点': str}]]]
+        @structure {'课表': [[[{'上课周数': [int], '课程名称': str, '课程地点': str}]]], '起始周': int, '结束周': int}
         """
-        method = 'get'
         url = 'student/asp/grkb1.asp'
-        response = self.api_request(method, url)
-
-        page = response.text
-        ss = SoupStrainer('table', width='840')
-        bs = BeautifulSoup(page, self.html_parser, parse_only=ss)
-        trs = bs.find_all('tr')
-        origin_list = parse_tr_strs(trs[1:])
-
-        # 顺时针反转矩阵
-        length = len(origin_list)
-        width = len(origin_list[0])
-        new_matrix = []
-        for i in range(width):
-            newline = []
-            for j in range(length):
-                newline.append(parse_course(origin_list[j][i]))
-            new_matrix.append(newline)
-
-        # 去除第一行的序号
-        timetable = new_matrix[1:]
-        return APIResult(timetable, response)
+        return _get_curriculum(self, url)
 
     def get_my_fees(self):
         """

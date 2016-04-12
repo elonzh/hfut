@@ -84,8 +84,6 @@ def parse_course(course_str):
     :param course_str: 形如 `单片机原理及应用[新安学堂434 (9-15周)]/数字图像处理及应用[新安学堂434 (1-7周)]/` 的课程表数据
     """
     # 解析课程单元格
-    if course_str is None:
-        return None
     # 所有情况
     # 机械原理[一教416 (1-14周)]/
     # 程序与算法综合设计[不占用教室 (18周)]/
