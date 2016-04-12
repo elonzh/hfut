@@ -58,7 +58,7 @@ index_tpl = """
 </html>
 """
 app = Bottle()
-stu = StudentSession(2013217413, 'pyth0n')
+stu = StudentSession('你的学号', '密码')
 c = stu.get_my_curriculum()
 start = c[u'起始周']
 end = c[u'结束周']
@@ -70,7 +70,7 @@ filtered = [None] * (end - start + 1)
 def index(week=1):
     idx = week - 1
     if filtered[idx] is None:
-        filtered[idx] = filter_curriculum(c['课表'], week)
+        filtered[idx] = filter_curriculum(c[u'课表'], week)
     return template(index_tpl, curriculum=filtered[idx], week=week, start=start, end=end)
 
 

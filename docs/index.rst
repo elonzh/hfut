@@ -65,7 +65,7 @@ QQ 群
 这部分文档主要介绍了 hfut_stu_lib 的背景,然后对于 hfut_stu_lib 的应用做了一步一步的要点介绍.
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
 
     user/intro
     user/install
