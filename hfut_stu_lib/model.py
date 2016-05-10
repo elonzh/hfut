@@ -107,24 +107,6 @@ class APIResult(object):
             return '<APIResult> [{:s}] {:s}'.format(request.method, request.url)
         return '<APIResult> without response'
 
-    def __iter__(self):
-        return self.data.__iter__()
-
-    def __getitem__(self, item):
-        return self.data.__getitem__(item)
-
-    def __getattr__(self, item):
-        if item in self.__dict__:
-            return self.__dict__[item]
-        else:
-            return self.data.__getattribute__(item)
-
-    def __len__(self):
-        return len(self.data)
-
-    def __bool__(self):
-        return bool(self.data)
-
 
 class BaseSession(requests.Session):
     """
@@ -837,7 +819,7 @@ class StudentSession(GuestSession):
         :param delete_courses: 需要删除的课程代码列表, 如 ``['0200011B']``
         :return: 选课结果, 返回选中的课程教学班列表, 结构与 ``get_selected_courses`` 一致
         """
-        t = self.get_system_state()
+        t = self.get_system_state().data
         if t['当前轮数'] is None:
             raise ValueError('当前为 %s,选课系统尚未开启', t['当前学期'])
         if not (select_courses or delete_courses):
@@ -938,7 +920,7 @@ class StudentSession(GuestSession):
         :param kcdms: 课程代码列表
         :return: 与课程代码列表长度一致的布尔值列表, 已为True,未选为False
         """
-        selected_courses = self.get_selected_courses()
+        selected_courses = self.get_selected_courses().data
         selected_kcdms = {course['课程代码'] for course in selected_courses}
         result = [True if kcdm in selected_kcdms else False for kcdm in kcdms]
         return APIResult(result)
@@ -959,11 +941,11 @@ class StudentSession(GuestSession):
         :param encoding: 文件编码
         """
         now = time.time()
-        t = self.get_system_state()
+        t = self.get_system_state().data
         if not (t['选课计划'][0][1] < now < t['选课计划'][2][1]):
             logger.warning('只推荐在第一轮选课结束到第三轮选课结束之间的时间段使用本接口!')
 
-        kcdms = kcdms or [l['课程代码'] for l in self.get_optional_courses()]
+        kcdms = kcdms or [l['课程代码'] for l in self.get_optional_courses().data]
         result = []
         for kcdm in kcdms:
             course_classes = self.get_course_classes(kcdm).data
