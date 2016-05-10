@@ -21,7 +21,7 @@ from .value import HF, HOSTS, TERM_PATTERN
 from .log import logger, log_result_not_found
 from .parser import parse_tr_strs, flatten_list, dict_list_2_tuple_set, parse_course, safe_zip
 
-__all__ = ['APIResult', 'BaseSession', 'GuestSession', 'AuthSession', 'StudentSession']
+__all__ = ['APIResult', 'BaseSession', 'GuestSession', 'StudentSession']
 
 
 def _get_curriculum(session, url, params=None):
@@ -493,7 +493,7 @@ class GuestSession(BaseSession):
 
 
 @six.python_2_unicode_compatible
-class StudentSession(BaseSession):
+class StudentSession(GuestSession):
     """
     学生教务接口, 继承了 :class:`models.GuestSession` 的所有接口, 因此一般推荐使用这个类
     """
