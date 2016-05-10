@@ -532,7 +532,7 @@ class StudentSession(GuestSession):
         """
         if self.campus == HF:
             login_data = {'IDToken1': self.account, 'IDToken2': self.password}
-            login_url = 'http://ids1.hfut.edu.cn:81/amserver/UI/Login'
+            login_url = 'http://ids1.hfut.edu.cn/amserver/UI/Login'
             super(StudentSession, self).api_request('post', login_url, data=login_data)
 
             method = 'get'
