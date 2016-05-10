@@ -18,7 +18,7 @@ index_tpl = """
     <title>第{{week}}周课表</title>
 </head>
 <body onload="document.getElementById('opt_' + '{{week}}').selected = true">
-<table border=1px>
+<table border="1px" style="word-break:break-all">
     <thead>
     <tr>
         <th>
@@ -58,7 +58,7 @@ index_tpl = """
 </html>
 """
 app = Bottle()
-stu = StudentSession('你的学号', '密码')
+stu = StudentSession('你的学号', '密码', '校区')
 c = stu.get_my_curriculum()
 start = c[u'起始周']
 end = c[u'结束周']

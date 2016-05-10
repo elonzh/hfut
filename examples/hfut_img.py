@@ -9,7 +9,7 @@ import logging
 import requests
 import os
 import sys
-from hfut_stu_lib import GuestSession
+from hfut_stu_lib import GuestSession, XC, HF
 from hfut_stu_lib.util import cal_term_code
 
 # 文件保存路径
@@ -19,11 +19,11 @@ START_YEAR = 2012
 # 结束年份
 END_YEAR = 2015
 
-# 是否是合肥校区
-is_hefei = False
+# 校区
+campus = XC
 
 # 所有人都上的课程 # 军事训练
-if is_hefei:
+if campus == HF:
     COURSE_CODE = '52000020'
 else:
     COURSE_CODE = '5200023B'
@@ -40,7 +40,7 @@ logger.addHandler(fh)
 logger.setLevel(logging.INFO)
 
 # 初始化 session
-session = GuestSession(is_hefei)
+session = GuestSession(campus)
 
 
 # 初始化文件夹

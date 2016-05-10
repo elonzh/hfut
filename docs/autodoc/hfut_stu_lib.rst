@@ -3,7 +3,7 @@
 hfut_stu_lib 的主要 API
 ===================================
 
-hfut_stu_lib.models 核心接口模块
+hfut_stu_lib.model 核心接口模块
 ---------------------------------------------
 .. automodule:: hfut_stu_lib.model
 

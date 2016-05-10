@@ -52,12 +52,12 @@ help:
 clean:
 	rm -rf $(BUILDDIR)/*
 
- # ----- 自己添加的编译参数 -----
+# ----- 自己添加的编译参数 -----
 autodoc:
 	sphinx-apidoc -o autodoc $(PROJECT)
 
 livehtml:
-    sphinx-autobuild -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	sphinx-autobuild -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 # ----- 自己添加的编译参数 -----
 
 html:

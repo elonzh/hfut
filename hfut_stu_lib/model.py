@@ -3,10 +3,9 @@
 hfut_stu_lib 核心的模块, 包括了 :class:`models.APIResult` 和包含各个接口的各个 ``Session`` 类, 继承关系如下:
 
 :class:`requests.sessions.Session` ->
-:class:`models.BaseSession` ->
-:class:`models.GuestSession` ->
-:class:`models.AuthSession` ->
-:class:`models.StudentSession`
+:class:`model.BaseSession` ->
+:class:`model.GuestSession` ->
+:class:`model.StudentSession`
 
 """
 from __future__ import unicode_literals, division
@@ -18,7 +17,7 @@ import time
 import requests
 from bs4 import SoupStrainer, BeautifulSoup
 
-from .value import XUANCHENG_HOST, HEFEI_HOST, STUDENT, TEACHER, ADMIN, TERM_PATTERN
+from .value import HF, HOSTS, TERM_PATTERN
 from .log import logger, log_result_not_found
 from .parser import parse_tr_strs, flatten_list, dict_list_2_tuple_set, parse_course, safe_zip
 
@@ -157,17 +156,18 @@ class BaseSession(requests.Session):
         logger.debug('[%s] %s 请求成功,请求耗时 %d ms', method, url, response.elapsed.total_seconds() * 1000)
         return response
 
-    def __init__(self, is_hefei):
+    def __init__(self, campus):
+        """
+        所以接口会话类的基类
+
+        :param campus: 校区代码, 请使用 ``value`` 模块中的 ``HF``, ``XC`` 分别来区分合肥校区和宣城校区
+        """
         super(BaseSession, self).__init__()
         self.headers = self.default_headers
 
-        assert isinstance(is_hefei, bool)
         # 初始化时根据合肥选择不同的地址
-        if is_hefei:
-            self.host = HEFEI_HOST
-        else:
-            self.host = XUANCHENG_HOST
-        self.is_hefei = is_hefei
+        self.campus = campus.upper()
+        self.host = HOSTS[self.campus]
 
 
 class GuestSession(BaseSession):
@@ -387,8 +387,9 @@ class GuestSession(BaseSession):
         """
         教师信息查询
 
-        @structure {'教研室': str, '教学课程': str, '学历': str, '教龄': str, '教师寄语': str, '简 历': str, '照片': str, '科研方向': str, '出生': str, '姓名': str,
-                '联系电话': [str], '职称': str, '电子邮件': str, '性别': str, '学位': str, '院系': str]
+        @structure {'教研室': str, '教学课程': str, '学历': str, '教龄': str, '教师寄语': str, '简 历': str, '照片': str,
+         '科研方向': str, '出生': str, '姓名': str, '联系电话': [str], '职称': str, '电子邮件': str, '性别': str, '学位': str,
+          '院系': str]
 
         :param jsh: 8位教师号, 例如 '05000162'
         """
@@ -492,27 +493,26 @@ class GuestSession(BaseSession):
 
 
 @six.python_2_unicode_compatible
-class AuthSession(GuestSession):
+class StudentSession(BaseSession):
     """
-    用于所有需要登录的用户角色继承的基类
+    学生教务接口, 继承了 :class:`models.GuestSession` 的所有接口, 因此一般推荐使用这个类
     """
 
-    def __init__(self, account, password, user_type, is_hefei=False):
+    def __init__(self, account, password, campus):
         """
         :param account: 学号
         :param password: 密码
         """
         # 先初始化状态才能登陆
-        super(AuthSession, self).__init__(is_hefei)
+        super(StudentSession, self).__init__(campus)
         self.account = account
         self.password = password
-        self.user_type = user_type
 
         self.last_request_at = time.time()
         self.login_session()
 
     def __str__(self):
-        return '<AuthSession for [{user_type}]{account}>'.format(account=self.account, user_type=self.user_type)
+        return '<StudentSession for [{user_type}]{account}>'.format(account=self.account, user_type=self.user_type)
 
     @property
     def is_expired(self):
@@ -520,6 +520,7 @@ class AuthSession(GuestSession):
         asp.net 如果程序中没有设置session的过期时间,那么session过期时间就会按照IIS设置的过期时间来执行,
         IIS中session默认过期时间为20分钟,网站配置 最长24小时,最小15分钟, 页面级>应用程序级>网站级>服务器级.
         .那么当超过 15 分钟未操作会认为会话已过期需要重新登录
+
         :return: 会话是否过期
         """
         now = time.time()
@@ -529,17 +530,10 @@ class AuthSession(GuestSession):
         """
         登录账户
         """
-        account = self.account
-        password = self.password
-        user_type = self.user_type
-        is_hefei = self.is_hefei
-        user_type = user_type.lower()
-        assert (user_type in (STUDENT, TEACHER, ADMIN)) and all([account, password])
-
-        if is_hefei and user_type == STUDENT:
-            login_data = {'IDToken1': account, 'IDToken2': password}
+        if self.campus == HF:
+            login_data = {'IDToken1': self.account, 'IDToken2': self.password}
             login_url = 'http://ids1.hfut.edu.cn:81/amserver/UI/Login'
-            super(AuthSession, self).api_request('post', login_url, data=login_data)
+            super(StudentSession, self).api_request('post', login_url, data=login_data)
 
             method = 'get'
             url = 'StuIndex.asp'
@@ -547,9 +541,9 @@ class AuthSession(GuestSession):
         else:
             method = 'post'
             url = 'pass.asp'
-            data = {"user": account, "password": password, "UserStyle": user_type}
+            data = {"user": self.account, "password": self.password, "UserStyle": 'student'}
         # 使用重载的 api_request 会造成递归调用
-        response = super(AuthSession, self).api_request(method, url, data=data, allow_redirects=False)
+        response = super(StudentSession, self).api_request(method, url, data=data, allow_redirects=False)
         logged_in = response.status_code == 302
         if not logged_in:
             if 'SQL通用防注入系统' in response.text:
@@ -570,35 +564,19 @@ class AuthSession(GuestSession):
         return result
 
     def api_request(self, method, url, params=None, data=None, headers=None, cookies=None, files=None, auth=None,
-                    timeout=None, allow_redirects=True, proxies=None, hooks=None, stream=None, verify=None, cert=None,
+                    timeout=None, allow_redirects=True, proxies=None, hooks=None, stream=None, verify=None,
+                    cert=None,
                     json=None):
 
         if self.is_expired:
             self.login_session()
         self.last_request_at = time.time()
 
-        return super(AuthSession, self).api_request(
+        return super(StudentSession, self).api_request(
             method, url, params=params, data=data, headers=headers, cookies=cookies,
             files=files, auth=auth, timeout=timeout, allow_redirects=allow_redirects,
             proxies=proxies, hooks=hooks, stream=stream, verify=verify, cert=cert, json=json
         )
-
-
-@six.python_2_unicode_compatible
-class StudentSession(AuthSession):
-    """
-    学生教务接口, 继承了 :class:`models.GuestSession` 的所有接口, 因此一般推荐使用这个类
-    """
-
-    def __init__(self, account, password, is_hefei=False):
-        """
-        :param account: 学号
-        :param password: 账号密码
-        """
-        super(StudentSession, self).__init__(account, password, STUDENT, is_hefei)
-
-    def __str__(self):
-        return '<StudentSession for [{user_type}]{account}>'.format(account=self.account, user_type=self.user_type)
 
     def get_code(self):
         """
