@@ -57,7 +57,11 @@ def _get_curriculum(session, url, params=None):
         new_matrix.append(newline)
     # 去除第一行的序号
     curriculum = new_matrix[1:]
-    return APIResult({'课表': curriculum, '起始周': min(weeks), '结束周': max(weeks)}, response)
+    weeks = weeks or {0}
+    return APIResult({'课表': curriculum,
+                      '起始周': min(weeks),
+                      '结束周': max(weeks)},
+                     response)
 
 
 @six.python_2_unicode_compatible
