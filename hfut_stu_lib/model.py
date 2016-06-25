@@ -17,6 +17,7 @@ import time
 import requests
 from bs4 import SoupStrainer, BeautifulSoup
 
+from .exception import SystemLoginFailed, IPBanned
 from .value import HF, HOSTS, TERM_PATTERN
 from .log import logger, log_result_not_found
 from .parser import parse_tr_strs, flatten_list, dict_list_2_tuple_set, parse_course, safe_zip
@@ -493,9 +494,9 @@ class StudentSession(GuestSession):
         super(StudentSession, self).__init__(campus)
         self.account = account
         self.password = password
-
+        self.name = None
         self.last_request_at = time.time()
-        self.login_session()
+        # self.login_session()
 
     def __str__(self):
         return '<StudentSession for [{user_type}]{account}>'.format(account=self.account, user_type=self.user_type)
@@ -516,6 +517,7 @@ class StudentSession(GuestSession):
         """
         登录账户
         """
+        # fixme: 宣区密码不足6位自动补零，超高12位只取前面12位
         if self.campus == HF:
             login_data = {'IDToken1': self.account, 'IDToken2': self.password}
             login_url = 'http://ids1.hfut.edu.cn/amserver/UI/Login'
@@ -535,16 +537,14 @@ class StudentSession(GuestSession):
             if 'SQL通用防注入系统' in response.text:
                 msg = '当前 IP 已被锁定,如果是宣城校内访问请切换教务系统地址,否则请在更换网络环境后重试'
                 logger.warning(msg)
+                raise IPBanned(msg)
             else:
                 msg = '登陆失败, 请检查你的账号和密码'
                 logger.error(msg)
-            raise ValueError(msg)
+                raise SystemLoginFailed(msg)
 
-        # if user_type == STUDENT:
-        #     escaped_name = self.cookies.get('xsxm')
-        # else:
-        #     escaped_name = None
-        # self.name = six.moves.urllib.parse.unquote(escaped_name, self.site_encoding)
+        escaped_name = self.cookies.get('xsxm')
+        self.name = six.moves.urllib.parse.unquote(escaped_name, self.site_encoding)
 
         result = APIResult(logged_in, response)
         return result

@@ -18,6 +18,19 @@
 开发日志
 ---------------
 
+
+1.2.2 (20160625)
+++++++++++++++++
+
+**小的改进**
+
+- :class:`model.StudentSession` 初始化成功后会从 cookie 中提取出姓名
+- 登录失败时将会触发新增的 :class:`exception.SystemLoginFailed`, IP被封会触发 :class:`exception.IPBanned`
+
+**行为改变**
+
+- :class:`model.StudentSession` 实例化后不会自动登录，需要主动调用 :meth:`model.StudentSession.login_session` 登录, 这样可以在登陆前对实例进行其他初始化，例如配置代理等
+
 1.2.1 (20160511)
 ++++++++++++++++
 
