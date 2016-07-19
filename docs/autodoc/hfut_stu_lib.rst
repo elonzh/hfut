@@ -16,9 +16,6 @@ hfut_stu_lib.model 核心接口模块
 .. autoclass:: hfut_stu_lib.model.GuestSession
     :members:
 
-.. autoclass:: hfut_stu_lib.model.AuthSession
-    :members:
-
 .. autoclass:: hfut_stu_lib.model.StudentSession
     :members:
 

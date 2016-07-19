@@ -61,7 +61,7 @@ def get_point(grade_str):
             return 2.0
         elif grade_str == '及格':
             return 1.2
-        elif grade_str == '不及格':
+        elif grade_str in ('不及格', '免修', '未考'):
             return 0.0
         else:
             raise ValueError('{:s} 不是有效的成绩'.format(grade_str))
