@@ -3,24 +3,30 @@
 hfut_stu_lib 核心的模块, 包括了 :class:`models.APIResult` 和包含各个接口的各个 ``Session`` 类, 继承关系如下:
 
 :class:`requests.sessions.Session` ->
+
 :class:`model.BaseSession` ->
+
 :class:`model.GuestSession` ->
+
 :class:`model.StudentSession`
 
 """
 from __future__ import unicode_literals, division
+
+import json
 import os
 import re
-import six
-import json
 import time
+from threading import Thread, Lock
+
 import requests
+import six
 from bs4 import SoupStrainer, BeautifulSoup
 
-from .exception import SystemLoginFailed, IPBanned
-from .value import HF, HOSTS, TERM_PATTERN
+from .exception import SystemLoginFailed, IPBanned, WrongPasswordPattern
 from .log import logger, log_result_not_found
 from .parser import parse_tr_strs, flatten_list, dict_list_2_tuple_set, parse_course, safe_zip
+from .value import XC, HF, HOSTS, TERM_PATTERN, HF_PASSWORD_PATTERN, XC_PASSWORD_PATTERN
 
 __all__ = ['APIResult', 'BaseSession', 'GuestSession', 'StudentSession']
 
@@ -126,21 +132,19 @@ class BaseSession(requests.Session):
     }
     html_parser = 'html.parser'
 
-    def api_request(self, method, url, params=None, data=None, headers=None, cookies=None, files=None, auth=None,
-                    timeout=None, allow_redirects=True, proxies=None, hooks=None, stream=None, verify=None, cert=None,
-                    json=None):
+    def api_request(self, method, url, **kwargs):
         """
         所有接口用来发送请求的方法, 只是 :meth:`requests.sessions.Session.request` 的一个钩子方法, 用来处理请求前后的工作
 
+        :param method: 请求方法
         :param url: 教务系统页面的相对地址
         """
         if not six.moves.urllib.parse.urlparse(url).netloc:
             url = six.moves.urllib.parse.urljoin(self.host, url)
-        response = self.request(method, url, params=params, data=data, headers=headers, cookies=cookies, files=files,
-                                auth=auth, timeout=timeout, allow_redirects=allow_redirects, proxies=proxies,
-                                hooks=hooks, stream=stream, verify=verify, cert=cert, json=json)
+        response = self.request(method, url, **kwargs)
         response.encoding = self.site_encoding
-        logger.debug('[%s] %s 请求成功,请求耗时 %d ms', method, url, response.elapsed.total_seconds() * 1000)
+        elapsed = response.elapsed.total_seconds() * 1000
+        logger.debug('[%s] %s 请求成功,请求耗时 %d ms\n参数: %s', method, url, elapsed, kwargs)
         return response
 
     def __init__(self, campus):
@@ -175,8 +179,7 @@ class GuestSession(BaseSession):
         # ss = SoupStrainer('table', height='85%')
         bs = BeautifulSoup(response.text, self.html_parser)
         text = bs.get_text(strip=True)
-        term_pattern = re.compile(TERM_PATTERN)
-        term = term_pattern.search(text).group()
+        term = TERM_PATTERN.search(text).group()
         plan_pattern = re.compile(
             r'第(\d)轮:'
             r'(\d{4}-\d{1,2}-\d{1,2}\s+\d{1,2}:\d{1,2}:\d{1,2})'
@@ -226,7 +229,7 @@ class GuestSession(BaseSession):
 
         page = response.text
         # 狗日的网页代码写错了无法正确解析标签!
-        term = re.search(TERM_PATTERN, page)
+        term = TERM_PATTERN.search(page)
         class_name_p = r'[\u4e00-\u9fa5\w-]+\d{4}班'
         class_name = re.search(class_name_p, page)
         # 虽然 \S 能解决匹配失败中文的问题, 但是最后的结果还是乱码的
@@ -259,7 +262,7 @@ class GuestSession(BaseSession):
         params = {'xqdm': xqdm,
                   'kcdm': kcdm.upper(),
                   'jxbh': jxbh}
-        response = self.api_request(method, url, params)
+        response = self.api_request(method, url, params=params)
 
         page = response.text
         ss = SoupStrainer('table', width='600')
@@ -383,7 +386,7 @@ class GuestSession(BaseSession):
         params = {'jsh': jsh}
         method = 'get'
         url = 'teacher/asp/teacher_info.asp'
-        response = self.api_request(method, url, params)
+        response = self.api_request(method, url, params=params)
 
         page = response.text
         ss = SoupStrainer('table')
@@ -420,7 +423,7 @@ class GuestSession(BaseSession):
         method = 'get'
         # url = 'student/asp/select_topRight.asp'
         url = 'student/asp/select_topRight_f3.asp'
-        response = self.api_request(method, url, params)
+        response = self.api_request(method, url, params=params)
 
         page = response.text
         ss = SoupStrainer('body')
@@ -450,7 +453,9 @@ class GuestSession(BaseSession):
                 cls_info[kv[0]] = int(kv[1]) if kv[1] else None
             # 教学班附加信息
             # 教学班附加信息：屯溪路校区 上课地点：体育部办公楼2楼
-            cls_info.update([(v.strip() or None for v in s.split('：', 1)) for s in info_trs[5].stripped_strings])
+            for s in info_trs[5].stripped_strings:
+                kv = s.split('：', 1)
+                cls_info[kv[0].strip()] = kv[1].strip() or None
             # 开课时间,开课地点
             p = re.compile(r'周[一二三四五六日]:\(\d+-\d+节\) \(\d+-\d+周\).+?\d+')
             cls_info[info_trs[3].get_text(strip=True)] = p.findall(info_trs[4].get_text(strip=True))
@@ -492,14 +497,28 @@ class StudentSession(GuestSession):
         """
         # 先初始化状态才能登陆
         super(StudentSession, self).__init__(campus)
+
         self.account = account
         self.password = password
         self.name = None
-        self.last_request_at = time.time()
-        # self.login_session()
+        self.last_request_at = 0
 
     def __str__(self):
-        return '<StudentSession for [{user_type}]{account}>'.format(account=self.account, user_type=self.user_type)
+        return '<StudentSession:{account}>'.format(account=self.account)
+
+    @property
+    def password(self):
+        return self.__password
+
+    @password.setter
+    def password(self, value):
+        if self.campus == HF:
+            if not HF_PASSWORD_PATTERN.match(value):
+                raise WrongPasswordPattern('合肥校区信息中心密码为6-16位')
+        elif self.campus == XC:
+            if not XC_PASSWORD_PATTERN.match(value):
+                raise WrongPasswordPattern('宣城校区教务密码为6-12位小写字母或数字')
+        self.__password = value
 
     @property
     def is_expired(self):
@@ -513,11 +532,13 @@ class StudentSession(GuestSession):
         now = time.time()
         return (now - self.last_request_at) >= 15 * 60
 
-    def login_session(self):
+    def login(self):
         """
         登录账户
         """
-        # fixme: 宣区密码不足6位自动补零，超高12位只取前面12位
+        # 登陆前清空 cookie, 能够防止再次登陆时因携带 cookie 可能提示有未进行教学评估的课程导致接口不可用
+        self.cookies.clear_session_cookies()
+
         if self.campus == HF:
             login_data = {'IDToken1': self.account, 'IDToken2': self.password}
             login_url = 'http://ids1.hfut.edu.cn/amserver/UI/Login'
@@ -546,23 +567,13 @@ class StudentSession(GuestSession):
         escaped_name = self.cookies.get('xsxm')
         self.name = six.moves.urllib.parse.unquote(escaped_name, self.site_encoding)
 
-        result = APIResult(logged_in, response)
-        return result
-
-    def api_request(self, method, url, params=None, data=None, headers=None, cookies=None, files=None, auth=None,
-                    timeout=None, allow_redirects=True, proxies=None, hooks=None, stream=None, verify=None,
-                    cert=None,
-                    json=None):
+    def api_request(self, method, url, **kwargs):
 
         if self.is_expired:
-            self.login_session()
+            self.login()
         self.last_request_at = time.time()
 
-        return super(StudentSession, self).api_request(
-            method, url, params=params, data=data, headers=headers, cookies=cookies,
-            files=files, auth=auth, timeout=timeout, allow_redirects=allow_redirects,
-            proxies=proxies, hooks=hooks, stream=stream, verify=verify, cert=cert, json=json
-        )
+        return super(StudentSession, self).api_request(method, url, **kwargs)
 
     def get_code(self):
         """
@@ -692,30 +703,32 @@ class StudentSession(GuestSession):
             feeds.append(feed)
         return APIResult(feeds, response)
 
-    def change_password(self, oldpwd, newpwd, new2pwd):
+    def change_password(self, new_password):
         """
-        修改教务密码, **注意**合肥校区使用信息中心账号登录, 与教务密码不一致
+        修改教务密码, **注意**合肥校区使用信息中心账号登录, 与教务密码不一致, 即使修改了也没有作用, 因此合肥校区帐号调用此接口会直接报错
 
         @structure bool
 
-        :param self: AuthSession 对象
-        :param oldpwd: 旧密码
-        :param newpwd: 新密码
-        :param new2pwd: 重复新密码
+        :param new_password: 新密码
         """
-        p = re.compile(r'^[\da-z]{6,12}$')
-        # 若不满足密码修改条件便不做请求
-        if newpwd != new2pwd or not p.match(newpwd):
-            return APIResult(False)
+        if self.campus == HF:
+            raise TypeError('合肥校区使用信息中心账号登录, 修改教务密码没有作用')
         # 若新密码与原密码相同, 直接返回 True
-        if newpwd == oldpwd:
+        if new_password == self.password:
+            msg = '原密码与新密码相同'
+            logger.warning(msg)
             return APIResult(True)
+        # 若不满足密码修改条件便不做请求
+        if not XC_PASSWORD_PATTERN.match(new_password):
+            msg = '密码为6-12位小写字母或数字'
+            logger.warning(msg)
+            return APIResult(False)
 
         method = 'post'
         url = 'student/asp/amend_password_jg.asp'
-        data = {'oldpwd': oldpwd,
-                'newpwd': newpwd,
-                'new2pwd': new2pwd}
+        data = {'oldpwd': self.password,
+                'newpwd': new_password,
+                'new2pwd': new_password}
         response = self.api_request(method, url, data=data)
 
         page = response.text
@@ -723,10 +736,10 @@ class StudentSession(GuestSession):
         bs = BeautifulSoup(page, self.html_parser, parse_only=ss)
         res = bs.text.strip()
         if res == '密码修改成功！':
-            self.password = newpwd
+            self.password = new_password
             return APIResult(True, response)
         else:
-            logger.warning('密码修改失败\noldpwd: %s\nnewpwd: %s\nnew2pwd: %s\ntext: %s', oldpwd, newpwd, new2pwd, res)
+            logger.warning('密码修改失败\nnewpwd: %s\ntext: %s', new_password, res)
             return APIResult(False, response)
 
     def set_telephone(self, tel):
@@ -769,7 +782,7 @@ class StudentSession(GuestSession):
         # url = 'student/asp/select_topLeft.asp'
         url = 'student/asp/select_topLeft_f3.asp'
         allow_redirects = False
-        response = self.api_request(method, url, params, allow_redirects=allow_redirects)
+        response = self.api_request(method, url, params=params, allow_redirects=allow_redirects)
 
         page = response.text
         ss = SoupStrainer('table', id='KCTable')
@@ -832,7 +845,7 @@ class StudentSession(GuestSession):
         select_courses = select_courses or []
         delete_courses = {l.upper() for l in (delete_courses or [])}
 
-        selected_courses = self.get_selected_courses()
+        selected_courses = self.get_selected_courses().data
         selected_kcdms = {course['课程代码'] for course in selected_courses}
 
         # 尝试删除没有被选中的课程会出错
@@ -914,6 +927,84 @@ class StudentSession(GuestSession):
 
         return APIResult(result, response)
 
+    def get_unfinished_evaluation(self):
+        """
+        获取未完成的课程评价
+
+        @structure [{'教学班号': str, '课程名称': str, '课程代码': str}]
+        """
+        method = 'get'
+        url = 'student/asp/jxpglb.asp'
+        response = self.api_request(method, url)
+        page = response.text
+        ss = SoupStrainer('table', width='600', bgcolor='#000000')
+        bs = BeautifulSoup(page, self.html_parser, parse_only=ss)
+        forms = bs.find_all('form')
+        result = []
+        for form in forms:
+            values = tuple(form.stripped_strings)
+            if len(values) > 3:
+                continue
+            status = dict(zip(('课程代码', '课程名称', '教学班号'), values))
+            result.append(status)
+        return APIResult(result, response)
+
+    def evaluate_course(self, kcdm, jxbh,
+                        r101=1, r102=1, r103=1, r104=1, r105=1, r106=1, r107=1, r108=1, r109=1,
+                        r201=3, r202=3, advice=''):
+        """
+        课程评价, 数值为 1-5, r1 类选项 1 为最好, 5 为最差, r2 类选项程度由深到浅, 3 为最好.
+
+        默认都是最好的选项
+
+        :param kcdm: 课程代码
+        :param jxbh: 教学班号
+        :param r101: 教学态度认真，课前准备充分
+        :param r102: 教授内容充实，要点重点突出
+        :param r103: 理论联系实际，反映最新成果
+        :param r104: 教学方法灵活，师生互动得当
+        :param r105: 运用现代技术，教学手段多样
+        :param r106: 注重因材施教，加强能力培养
+        :param r107: 严格要求管理，关心爱护学生
+        :param r108: 处处为人师表，注重教书育人
+        :param r109: 教学综合效果
+        :param r201: 课程内容
+        :param r202: 课程负担
+        :param advice: 其他建议，不能超过120字且不能使用分号,单引号,都好
+        :return:
+        """
+        advice_length = len(advice)
+
+        if advice_length > 120 or re.search(r"[;']", advice):
+            raise ValueError('advice 不能超过120字且不能使用分号和单引号')
+
+        method = 'post'
+        url = 'student/asp/Jxpg_2.asp'
+        value_map = ['01', '02', '03', '04', '05']
+        data = {
+            'kcdm': kcdm,
+            'jxbh': jxbh,
+            'r101': value_map[r101 - 1],
+            'r102': value_map[r102 - 1],
+            'r103': value_map[r103 - 1],
+            'r104': value_map[r104 - 1],
+            'r105': value_map[r105 - 1],
+            'r106': value_map[r106 - 1],
+            'r107': value_map[r107 - 1],
+            'r108': value_map[r108 - 1],
+            'r109': value_map[r109 - 1],
+            'r201': value_map[r201 - 1],
+            'r202': value_map[r202 - 1],
+            'txt13': advice
+            # 可以不填
+            # 'Maxtxt13': 120 - advice_length
+        }
+        response = self.api_request(method, url, data=data)
+        if re.search('您已经成功提交', response.text):
+            return APIResult(True, response)
+        else:
+            return APIResult(False, response)
+
     # ---------- 不需要专门的请求 ----------
     def check_courses(self, kcdms):
         """
@@ -951,12 +1042,32 @@ class StudentSession(GuestSession):
 
         kcdms = kcdms or [l['课程代码'] for l in self.get_optional_courses().data]
         result = []
-        for kcdm in kcdms:
+
+        # for kcdm in kcdms:
+        #     course_classes = self.get_course_classes(kcdm).data
+        #     if course_classes is not None:
+        #         course_classes['可选班级'] = [c for c in course_classes['可选班级'] if c['课程容量'] > c['选中人数']]
+        #         if len(course_classes['可选班级']) > 0:
+        #             result.append(course_classes)
+
+        lock = Lock()
+
+        def target(kcdm):
             course_classes = self.get_course_classes(kcdm).data
             if course_classes is not None:
                 course_classes['可选班级'] = [c for c in course_classes['可选班级'] if c['课程容量'] > c['选中人数']]
                 if len(course_classes['可选班级']) > 0:
+                    lock.acquire()
                     result.append(course_classes)
+                    lock.relase()
+
+        threads = (Thread(target=target, args=(kcdm,), name=kcdm) for kcdm in kcdms)
+        for t in threads:
+            t.start()
+
+        for t in threads:
+            t.join()
+
         if dump_result:
             json_str = json.dumps(result, ensure_ascii=False, indent=4, sort_keys=True)
             with open(filename + '.json', 'wb') as fp:

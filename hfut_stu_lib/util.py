@@ -3,15 +3,16 @@
 一些能够帮你提升效率的辅助函数
 """
 from __future__ import unicode_literals, division
-import re
-import six
+
+from copy import deepcopy
+from threading import Thread, Lock
+
 import requests
 import requests.exceptions
-from copy import deepcopy
-from threading import Thread
+import six
 
-from .value import TERM_PATTERN
 from .log import logger
+from .value import TERM_PATTERN
 
 __all__ = ['get_point', 'cal_gpa', 'cal_term_code', 'term_str2code', 'rank_host_speed', 'filter_curriculum']
 
@@ -119,8 +120,7 @@ def term_str2code(term_str):
     :param term_str: 形如 "2012-2013学年第二学期" 的学期字符串
     :return: 形如 "022" 的学期代码
     """
-    term_pattern = re.compile(TERM_PATTERN)
-    result = term_pattern.match(term_str).groups()
+    result = TERM_PATTERN.match(term_str).groups()
     year = int(result[0])
     return cal_term_code(year, result[1] == '一')
 
@@ -152,6 +152,7 @@ def rank_host_speed(exclude=None, timeout=(5, 10)):
         logger.debug('[%s] 被排除', h)
 
     available_hosts = []
+    lock = Lock()
 
     class HostCheckerThread(Thread):
         def __init__(self, host):
@@ -172,7 +173,9 @@ def rank_host_speed(exclude=None, timeout=(5, 10)):
                 logger.error('[%s] 连接失败!', self.host)
             else:
                 cost = res.elapsed.total_seconds() * 1000
+                lock.acquire()
                 available_hosts.append((cost, self.host))
+                lock.relase()
                 logger.info('[%s] 请求成功,耗时 %.0f ms', self.host, cost)
 
     threads = [HostCheckerThread(u) for u in hosts]
@@ -196,7 +199,6 @@ def filter_curriculum(curriculum, week, weekday=None):
     :param weekday: 星期几, 是一个代表星期的整数, 1-7 对应周一到周日
     :return: 如果 weekday 参数没给出, 返回的格式与原课表一致, 但只包括了在指定周数的课程, 否则返回指定周数和星期几的当天课程
     """
-    # todo: need test case
     if weekday:
         c = [deepcopy(curriculum[weekday - 1])]
     else:
@@ -213,23 +215,3 @@ def filter_curriculum(curriculum, week, weekday=None):
                 logger.warning('第 %d 周周 %d 第 %d 节课有冲突: %s', week, weekday or c.index(d) + 1, t_idx + 1, t)
             d[t_idx] = t
     return c[0] if weekday else c
-
-# 不是很可靠也没必要
-# def guess_is_hefei(student_id):
-#     """
-#     根据学号猜测属于哪个校区, 注意可能无法得到结果
-#
-#     :param student_id: 学生学号
-#     :return: 合肥校区为 True ,宣城校区为 False, 猜测失败为 None
-#     """
-#     student_id = six.text_type(student_id)
-#     fmt = 'student/photo/{}/{}.JPG'.format(student_id[0:4], student_id)
-#     is_hefei = None
-#     urljoin = six.moves.urllib.parse.urljoin
-#     if requests.get(urljoin(XUANCHENG_HOST, fmt)).ok:
-#         is_hefei = False
-#     elif requests.get(urljoin(HEFEI_HOST, fmt)).ok:
-#         is_hefei = True
-#     else:
-#         logger.warning('没有猜测到这个学号属于哪个校区!')
-#     return is_hefei

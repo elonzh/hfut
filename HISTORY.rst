@@ -1,8 +1,6 @@
 ..
     **功能和改进**
 
-    **小的改进**
-
     **接口改变**
 
     **行为改变**
@@ -18,6 +16,30 @@
 开发日志
 ---------------
 
+
+1.3.0 (20160719)
+++++++++++++++++
+
+**功能和改进**
+
+- 添加了 :meth:`model.StudentSession.get_unfinished_evaluation` 接口用来查询未完成的课程评价
+- 添加了 :meth:`model.StudentSession.evaluate_course` 接口用来进行课程评价
+- 添加了登录时的密码格式验证
+- 密码格式不正确时将会触发新增的 :class:`exception.WrongPasswordPattern`
+- 调整了日志记录格式
+- :func:`util.rank_host_speed` 对写操作加锁避免竞争冒险
+- :meth:`model.StudentSession.get_selectable_courses` 使用了多线程进行优化
+
+**行为改变**
+
+- 去掉了 :meth:`model.StudentSession.change_password` 多余的 `oldpwd`,`new2pwd` 参数, 合肥校区修改教务密码无意义, 因此不允许调用此接口
+- :meth:`model.StudentSession.login_session` 改为 :meth:`model.StudentSession.login` 并且不再有返回值, 同时也修复了上个版本需要主动调用的问题
+
+**问题修复**
+
+- :meth:`model.StudentSession.__str__` 格式化错误
+- :meth:`model.StudentSession.change_course` 中错误的属性引用
+- 修复由于存在未完成的课程评价导致接口调用出错的问题
 
 1.2.2 (20160625)
 ++++++++++++++++

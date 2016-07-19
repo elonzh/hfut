@@ -3,9 +3,11 @@
 页面解析相关的函数,如果你想自己编写接口可能用得到
 """
 from __future__ import unicode_literals, division
+
 import re
-import six
 from pprint import pformat
+
+import six
 
 from .log import logger
 

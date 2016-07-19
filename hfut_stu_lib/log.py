@@ -3,6 +3,7 @@
 日志模块
 """
 from __future__ import unicode_literals
+
 from logging import Logger, WARNING, StreamHandler, Formatter
 
 __all__ = ['logger', 'unstable', 'log_result_not_found']
@@ -10,7 +11,8 @@ __all__ = ['logger', 'unstable', 'log_result_not_found']
 logger = Logger('hfut_stu_lib', level=WARNING)
 
 sh = StreamHandler()
-fmt = Formatter('[%(levelname)s]%(filename)s[%(lineno)d]: %(message)s')
+# https://docs.python.org/3/library/logging.html#logrecord-attributes
+fmt = Formatter('[%(levelname)s]%(name)s.%(module)s at %(lineno)d: %(message)s')
 sh.setFormatter(fmt)
 logger.addHandler(sh)
 

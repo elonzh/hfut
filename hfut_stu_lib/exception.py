@@ -7,3 +7,7 @@ class SystemLoginFailed(Exception):
 
 class IPBanned(SystemLoginFailed):
     pass
+
+
+class WrongPasswordPattern(Exception):
+    pass
