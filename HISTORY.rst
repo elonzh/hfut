@@ -17,12 +17,20 @@
 ---------------
 
 
-1.3.1 (20160719)
+1.3.1 (20160722)
 ++++++++++++++++
 
 **问题修复**
 
 - 修复 :func:`util.get_point` 对成绩数据判断的不完整导致的错误
+- 修复 :meth:`model.StudentSession.get_optional_courses` 分片错误导致总是缺失一门课程的错误
+- 修复 :meth:`model.GuestSession.get_teaching_plan` 查询公选课时教务系统返回大量重复课程的错误
+- 修复 :meth:`model.GuestSession.search_course` 结果数据格式化不完整
+
+**行为改变**
+
+- :meth:`model.GuestSession.get_teaching_plan` 查询公选课时不再需要 `zydm` 参数
+- 删除了所有返回结果中含有的 `序号` 字段
 
 1.3.0 (20160719)
 ++++++++++++++++

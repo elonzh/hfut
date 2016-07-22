@@ -69,7 +69,7 @@ def get_point(grade_str):
 
 def cal_gpa(grades):
     """
-    根据成绩数组计算课程平均绩点和 gpa
+    根据成绩数组计算课程平均绩点和 gpa, 算法不一定与学校一致, 结果仅供参考
 
     :param grades: :meth:`models.StudentSession.get_my_achievements` 返回的成绩数组
     :return: 包含了课程平均绩点和 gpa 的元组
@@ -105,7 +105,6 @@ def cal_term_code(year, is_first_term=True):
     """
     if year <= 2001:
         msg = '出现了超出范围年份: {}'.format(year)
-        logger.critical(msg)
         raise ValueError(msg)
     term_code = (year - 2001) * 2
     if is_first_term:

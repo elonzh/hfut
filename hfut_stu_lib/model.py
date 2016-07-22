@@ -214,7 +214,7 @@ class GuestSession(BaseSession):
         """
         教学班查询, 查询指定教学班的所有学生
 
-        @structure {'学期': str, '班级名称': str, '学生': [{'姓名': str, '学号': int, '序号': int}]}
+        @structure {'学期': str, '班级名称': str, '学生': [{'姓名': str, '学号': int}]}
 
         :param xqdm: 学期代码
         :param kcdm: 课程代码
@@ -236,7 +236,8 @@ class GuestSession(BaseSession):
         stu_p = r'>\s*?(\d{1,3})\s*?</.*?>\s*?(\d{10})\s*?</.*?>\s*?([\u4e00-\u9fa5*]+)\s*?</'
         stus = re.findall(stu_p, page, re.DOTALL)
         if term and class_name and stus:
-            stus = [{'序号': int(v[0]), '学号': int(v[1]), '姓名': v[2]} for v in stus]
+            # stus = [{'序号': int(v[0]), '学号': int(v[1]), '姓名': v[2]} for v in stus]
+            stus = [{'学号': int(v[1]), '姓名': v[2]} for v in stus]
             return APIResult({'学期': term.group(), '班级名称': class_name.group(), '学生': stus}, response)
         elif page.find('无此教学班') != -1:
             log_result_not_found(page)
@@ -298,7 +299,7 @@ class GuestSession(BaseSession):
         """
         课程查询
 
-        @structure [{'任课教师': str, '课程名称': str, '教学班号': str, '课程代码': str, '班级容量': int, '序号': int}]
+        @structure [{'任课教师': str, '课程名称': str, '教学班号': str, '课程代码': str, '班级容量': int}]
 
         :param xqdm: 学期代码
         :param kcdm: 课程代码
@@ -325,25 +326,27 @@ class GuestSession(BaseSession):
             value_list = parse_tr_strs(trs)
             for values in value_list:
                 course = dict(safe_zip(keys, values))
+                course.pop('序号')
                 course['课程代码'] = course['课程代码'].upper()
-                courses.append(course)
-                course['序号'] = int(course['序号'])
                 course['班级容量'] = int(course['班级容量'])
+                courses.append(course)
             return APIResult(courses, response)
         else:
             log_result_not_found(page)
             return APIResult(response=response)
 
-    def get_teaching_plan(self, xqdm, zydm, kclx='b'):
+    def get_teaching_plan(self, xqdm, kclx='b', zydm=''):
         """
-        专业教学计划查询
+        专业教学计划查询, 可以查询全校公选课, 此时可以不填 `zydm`
 
-        @structure [{'开课单位': str, '学时': int, '课程名称': str, '课程代码': str, '学分': float, '序号': int}]
+        @structure [{'开课单位': str, '学时': int, '课程名称': str, '课程代码': str, '学分': float}]
 
         :param xqdm: 学期代码
         :param kclx: 课程类型参数,只有两个值 b:专业必修课, x:全校公选课
         :param zydm: 专业代码, 可以从 :meth:`models.StudentSession.get_code` 获得
         """
+        if kclx == 'b' and not zydm:
+            raise ValueError('查询专业必修课必须提供专业代码')
         kclxdm = {'b': 1, 'x': 3}[kclx]
 
         method = 'post'
@@ -365,11 +368,15 @@ class GuestSession(BaseSession):
         value_list = parse_tr_strs(trs[2:])
         teaching_plan = []
         for values in value_list:
+            code = values[1].upper()
+            if teaching_plan and teaching_plan[-1]['课程代码'] == code:
+                # 查询公选课会有大量的重复
+                continue
             plan = dict(safe_zip(keys, values))
-            plan['课程代码'] = plan['课程代码'].upper()
+            plan.pop('序号')
+            plan['课程代码'] = code
             plan['学时'] = int(plan['学时'])
             plan['学分'] = float(plan['学分'])
-            plan['序号'] = int(plan['序号'])
             teaching_plan.append(plan)
         return APIResult(teaching_plan, response)
 
@@ -789,7 +796,7 @@ class StudentSession(GuestSession):
         bs = BeautifulSoup(page, self.html_parser, parse_only=ss)
         courses = []
         trs = bs.find_all('tr')
-        value_list = [tuple(tr.stripped_strings) for tr in trs[:-1]]
+        value_list = [tuple(tr.stripped_strings) for tr in trs]
         for values in value_list:
             course = {'课程代码': values[0].upper(),
                       '课程名称': values[1],
