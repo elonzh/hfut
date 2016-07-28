@@ -12,7 +12,7 @@ logger = Logger('hfut_stu_lib', level=WARNING)
 
 sh = StreamHandler()
 # https://docs.python.org/3/library/logging.html#logrecord-attributes
-fmt = Formatter('[%(levelname)s]%(name)s.%(module)s at %(lineno)d: %(message)s')
+fmt = Formatter('[%(levelname)s]%(module)s.%(funcName)s at %(lineno)d: %(message)s')
 sh.setFormatter(fmt)
 logger.addHandler(sh)
 

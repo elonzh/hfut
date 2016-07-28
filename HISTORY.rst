@@ -29,6 +29,10 @@
 
 - :module:`exception` 中的 `WrongPasswordPattern` 改为了 `ValidationError`
 
+**问题修复**
+
+- 更新了新的学期名称匹配规则
+
 1.3.1 (20160722)
 ++++++++++++++++
 

@@ -376,7 +376,7 @@ class GuestSession(BaseSession):
         for values in value_list:
             code = values[1].upper()
             if teaching_plan and teaching_plan[-1]['课程代码'] == code:
-                # 查询公选课会有大量的重复
+                # 宣城校区查询公选课会有大量的重复
                 continue
             plan = dict(safe_zip(keys, values))
             plan.pop('序号')
