@@ -9,7 +9,7 @@ hfut_stu_lib
 from __future__ import unicode_literals
 
 __title__ = 'hfut_stu_lib'
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 __author__ = 'erliang'
 __author_email__ = 'dev@erliang.me'
 __url__ = 'https://github.com/er1iang/hfut-stu-lib'

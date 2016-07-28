@@ -23,10 +23,11 @@ import requests
 import six
 from bs4 import SoupStrainer, BeautifulSoup
 
-from .exception import SystemLoginFailed, IPBanned, WrongPasswordPattern
+from .exception import SystemLoginFailed, IPBanned, ValidationError
 from .log import logger, log_result_not_found
 from .parser import parse_tr_strs, flatten_list, dict_list_2_tuple_set, parse_course, safe_zip
-from .value import XC, HF, HOSTS, TERM_PATTERN, HF_PASSWORD_PATTERN, XC_PASSWORD_PATTERN
+from .value import XC, HF, HOSTS, TERM_PATTERN, XC_PASSWORD_PATTERN, ACCOUNT_PATTERN, HF_PASSWORD_PATTERN, \
+    validate_attrs
 
 __all__ = ['APIResult', 'BaseSession', 'GuestSession', 'StudentSession']
 
@@ -119,6 +120,7 @@ class APIResult(object):
         return '<APIResult> without response'
 
 
+@validate_attrs({'campus': 'validate_campus'})
 class BaseSession(requests.Session):
     """
     所有接口会话类的基类
@@ -159,6 +161,10 @@ class BaseSession(requests.Session):
         # 初始化时根据合肥选择不同的地址
         self.campus = campus.upper()
         self.host = HOSTS[self.campus]
+
+    def validate_campus(self, value):
+        if value not in (XC, HF):
+            raise ValidationError('校区代码只能为"XC"或者"HF"')
 
 
 class GuestSession(BaseSession):
@@ -491,6 +497,7 @@ class GuestSession(BaseSession):
         return _get_curriculum(self, url, params=params)
 
 
+@validate_attrs({'account': 'validate_account', 'password': 'validate_password'})
 @six.python_2_unicode_compatible
 class StudentSession(GuestSession):
     """
@@ -513,19 +520,18 @@ class StudentSession(GuestSession):
     def __str__(self):
         return '<StudentSession:{account}>'.format(account=self.account)
 
-    @property
-    def password(self):
-        return self.__password
+    def validate_account(self, value):
+        value = six.text_type(value)
+        if not ACCOUNT_PATTERN.match(value):
+            raise ValidationError('学号为10位数字')
 
-    @password.setter
-    def password(self, value):
+    def validate_password(self, value):
         if self.campus == HF:
             if not HF_PASSWORD_PATTERN.match(value):
-                raise WrongPasswordPattern('合肥校区信息中心密码为6-16位')
+                raise ValidationError('合肥校区信息中心密码为6-16位')
         elif self.campus == XC:
             if not XC_PASSWORD_PATTERN.match(value):
-                raise WrongPasswordPattern('宣城校区教务密码为6-12位小写字母或数字')
-        self.__password = value
+                raise ValidationError('宣城校区教务密码为6-12位小写字母或数字')
 
     @property
     def is_expired(self):

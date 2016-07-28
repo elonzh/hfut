@@ -17,6 +17,18 @@
 ---------------
 
 
+1.3.2 (20160728)
+++++++++++++++++
+
+**功能和改进**
+
+- 重新实现了类的属性验证方式, :func:`hfut_stu_lib.value.validate_attrs`
+- 添加了对 `model.StudentSession.account`, `hfut_stu_lib.model.BaseSession.campus` 的验证
+
+**行为改变**
+
+- :module:`exception` 中的 `WrongPasswordPattern` 改为了 `ValidationError`
+
 1.3.1 (20160722)
 ++++++++++++++++
 

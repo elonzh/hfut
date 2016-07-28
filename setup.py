@@ -1,9 +1,9 @@
 # -*- coding:utf-8 -*-
 # 在 Python2 下使用 unicode_literals 会导致自定义命令出错
 # from __future__ import unicode_literals
-import hfut_stu_lib
-
 from setuptools import setup, find_packages
+
+import hfut_stu_lib
 
 # from setuptools.command.test import test as TestCommand
 

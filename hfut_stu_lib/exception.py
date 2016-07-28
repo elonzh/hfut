@@ -9,5 +9,5 @@ class IPBanned(SystemLoginFailed):
     pass
 
 
-class WrongPasswordPattern(Exception):
+class ValidationError(Exception):
     pass
