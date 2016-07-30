@@ -4,17 +4,17 @@ hfut_stu_lib - 合肥工业大学教务接口文档
 开发状态
 -----------
 
-.. image:: https://img.shields.io/github/license/er1iang/hfut_stu_lib.svg
-    :target: https://github.com/er1iang/hfut_stu_lib/blob/master/LICENSE
+.. image:: https://img.shields.io/github/license/er1iang/hfut-stu-lib.svg
+    :target: https://github.com/er1iang/hfut-stu-lib/blob/master/LICENSE
 
-.. image:: https://img.shields.io/pypi/v/hfut_stu_lib.svg
-    :target: https://pypi.python.org/pypi/hfut_stu_lib
+.. image:: https://img.shields.io/pypi/v/hfut-stu-lib.svg
+    :target: https://pypi.python.org/pypi/hfut-stu-lib
 
-.. image:: https://img.shields.io/travis/er1iang/hfut_stu_lib.svg
-    :target: https://travis-ci.org/er1iang/hfut_stu_lib
+.. image:: https://img.shields.io/travis/er1iang/hfut-stu-lib.svg
+    :target: https://travis-ci.org/er1iang/hfut-stu-lib
 
-.. image:: https://landscape.io/github/er1iang/hfut-stu-lib/master/landscape.svg?style#flat
-    :target: https://landscape.io/github/er1iang/hfut-stu-lib/master
+.. image:: https://img.shields.io/coveralls/er1iang/hfut-stu-lib.svg?maxAge=2592000
+    :target: https://coveralls.io/github/er1iang/hfut-stu-lib
 
 
 hfut_stu_lib 提供了合肥工业大学教务系统学生端接口并提供了方便开发者开发围绕学生数据的一些工具.

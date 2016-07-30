@@ -11,7 +11,8 @@ from tests import TestBase
 # http://docs.pytest.org/en/latest/usage.html
 pytest_args = [
     '--cov-config', '.coveragerc',
-    '--cov-report', 'html',
+    # '--cov-report', 'html',
+    '--cov-report', 'term-missing',
     '--cov=hfut_stu_lib', 'tests/',
     '--doctest-modules',
     # '--pdb'
