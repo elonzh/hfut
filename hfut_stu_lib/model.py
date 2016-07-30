@@ -578,7 +578,12 @@ class StudentSession(GuestSession):
                 raise SystemLoginFailed(msg)
 
         escaped_name = self.cookies.get('xsxm')
-        self.name = six.moves.urllib.parse.unquote(escaped_name, self.site_encoding)
+        # https://pythonhosted.org/six/#module-six.moves.urllib.parse
+        if six.PY3:
+            self.name = six.moves.urllib.parse.unquote(escaped_name, self.site_encoding)
+        else:
+            name = six.moves.urllib.parse.unquote(escaped_name)
+            self.name = name.decode(self.site_encoding)
 
     def api_request(self, method, url, **kwargs):
 
@@ -1056,13 +1061,6 @@ class StudentSession(GuestSession):
         kcdms = kcdms or [l['课程代码'] for l in self.get_optional_courses().data]
         result = []
 
-        # for kcdm in kcdms:
-        #     course_classes = self.get_course_classes(kcdm).data
-        #     if course_classes is not None:
-        #         course_classes['可选班级'] = [c for c in course_classes['可选班级'] if c['课程容量'] > c['选中人数']]
-        #         if len(course_classes['可选班级']) > 0:
-        #             result.append(course_classes)
-
         lock = Lock()
 
         def target(kcdm):
@@ -1072,7 +1070,7 @@ class StudentSession(GuestSession):
                 if len(course_classes['可选班级']) > 0:
                     lock.acquire()
                     result.append(course_classes)
-                    lock.relase()
+                    lock.release()
 
         threads = (Thread(target=target, args=(kcdm,), name=kcdm) for kcdm in kcdms)
         for t in threads:
@@ -1083,7 +1081,7 @@ class StudentSession(GuestSession):
 
         if dump_result:
             json_str = json.dumps(result, ensure_ascii=False, indent=4, sort_keys=True)
-            with open(filename + '.json', 'wb') as fp:
+            with open(filename, 'wb') as fp:
                 fp.write(json_str.encode(encoding))
-            logger.debug('result dumped to %s', filename)
+            logger.debug('可选课程结果导出到了:%s', filename)
         return APIResult(result)

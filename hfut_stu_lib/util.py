@@ -174,7 +174,7 @@ def rank_host_speed(exclude=None, timeout=(5, 10)):
                 cost = res.elapsed.total_seconds() * 1000
                 lock.acquire()
                 available_hosts.append((cost, self.host))
-                lock.relase()
+                lock.release()
                 logger.info('[%s] 请求成功,耗时 %.0f ms', self.host, cost)
 
     threads = [HostCheckerThread(u) for u in hosts]
@@ -209,7 +209,7 @@ def filter_curriculum(curriculum, week, weekday=None):
             if t is None:
                 continue
             # 一般同一时间课程不会重复，重复时给出警告
-            t = list(filter(lambda k: week in k['上课周数'], t.copy())) or None
+            t = list(filter(lambda k: week in k['上课周数'], t)) or None
             if t is not None and len(t) > 1:
                 logger.warning('第 %d 周周 %d 第 %d 节课有冲突: %s', week, weekday or c.index(d) + 1, t_idx + 1, t)
             d[t_idx] = t

@@ -1,3 +1,3 @@
-requests
-beautifulsoup4
-six
+requests>=2.10.0
+beautifulsoup4>=4.5.0
+six>=1.10.0

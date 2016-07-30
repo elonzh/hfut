@@ -1,25 +1,24 @@
-# https://docs.travis-ci.com/
 language: python
-python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-
-# command to install dependencies
-install:
-  - "pip install coveralls"
-  - "pip install -r requirements.txt"
-  - "pip install -r dev-requirements.txt"
-# command to run tests
-script:
-#  - py.test
-  - echo "online test disabled"
-#after_success:
-#  - coveralls
-notifications:
-    webhooks:
-      - https://jianliao.com/v2/services/webhook/3e1779ce20f15f1337b107784b043751728ed9e1
-    slack:
-      on_success: never
-      on_failure: never
+python: 3.5
+env:
+  matrix:
+  - TOXENV=py35
+  - TOXENV=py34
+  - TOXENV=py33
+  - TOXENV=py27
+  - TOXENV=pypy
+before_install:
+- openssl aes-256-cbc -K $encrypted_8816a2954ab9_key -iv $encrypted_8816a2954ab9_iv
+  -in test_accounts.csv.enc -out test_accounts.csv -d
+install: pip install -U tox
+script: tox -e ${TOXENV}
+deploy:
+  provider: pypi
+  distributions: sdist bdist_wheel
+  user: erliang
+  password:
+    secure: n8kReVirzW4wdBgjfl5UN8VemDzJIrbzvtjUKtBbZaq/UCeSgXj9r/pX6AFGOY/cX5I2hE1smMtTp9NDsItReKN9JwT6B2ozSt+G75bWSfN4JpetB8xAkmkIsve7H6Oh5eQT5Y3pDORNeFBhGSbKVtFr6Ec/RxuFaxI0a3bJHfNHqnL9zVnnmxOjhhVwq/o0CbVAomDtEQugBg9B2rW+rslqphAjBx2EC5nB/tW8ogEaLLRLU1FBJHdat9qtD9x3Hv/0bGPZMEqEsUsjmWBnj3MZnEPoHbhJfqDJcV1J9Q77erycU2q1L/9dxNoc4Y/fvL6rWEFMx/iANfO2wcUPtCP+GuriM4RIR0DjrG/xnivqBYuJTiTUyrz7A/PX7J+VutxCiq+mY96g1/lKLwcXLqX4AvJuFDIxSacbLcTeq754zO/VY3VhRf962aOivsMTR2sM8LfVqWUcD38KZ07+4zoE6wenWVrufqKjYB5iFwHc1Aa9r00cqD/3Oa+s2+V281rm6XuGEvaMSR0MvgDlzS8lCyisRuRiCZZQY74I7lgYh2IOIC96TsgXH/S9KsZDo39GoZc07hBPfD3p0dUsATHGRSuCDG+DA1v6vvEaQYNUZo8SeyJ9FvBLwOsI/fpw0l9YQNjebEyx49nizdGJsmiEGsoWpQJFMkD7Bf7/TiE=
+  on:
+    tags: true
+    repo: er1iang/hfut-stu-lib
+    condition: "$TOXENV == py27"
