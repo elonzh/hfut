@@ -8,9 +8,12 @@ env:
   - TOXENV=py27
   - TOXENV=pypy
 before_install:
-- openssl aes-256-cbc -K $encrypted_8816a2954ab9_key -iv $encrypted_8816a2954ab9_iv
-  -in test_accounts.csv.enc -out test_accounts.csv -d
-install: pip install -U tox
+  - openssl aes-256-cbc -K $encrypted_8816a2954ab9_key -iv $encrypted_8816a2954ab9_iv
+    -in test_accounts.csv.enc -out test_accounts.csv -d
+install:
+  - pip install -U tox
+  - pip install -r requirements.txt
+  - pip install -r dev-requirements.txt
 script: tox -e ${TOXENV}
 deploy:
   provider: pypi
