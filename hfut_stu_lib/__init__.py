@@ -8,7 +8,7 @@ hfut_stu_lib
 """
 from __future__ import unicode_literals
 
-__title__ = 'hfut_stu_lib'
+__title__ = 'hfut-stu-lib'
 __version__ = '1.3.3'
 __author__ = 'erliang'
 __author_email__ = 'dev@erliang.me'

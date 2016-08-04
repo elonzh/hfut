@@ -31,3 +31,5 @@ deploy:
     repo: er1iang/hfut-stu-lib
     condition: "$TOXENV == py27"
 
+notifications:
+  slack: erliang:dI0z5IbJovSQp2dTfQp4zyne

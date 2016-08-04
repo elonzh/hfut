@@ -5,30 +5,11 @@ from setuptools import setup, find_packages
 
 import hfut_stu_lib
 
-# from setuptools.command.test import test as TestCommand
+with open('README.rst') as readme_file:
+    readme = readme_file.read()
 
-# class PyTest(TestCommand):
-#     user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
-#
-#     def initialize_options(self):
-#         TestCommand.initialize_options(self)
-#         self.pytest_args = [
-#             '--cov-config', '.coveragerc',
-#             '--cov-report', 'html',
-#             '--cov=hfut_stu_lib', 'tests/',
-#             '--doctest-modules'
-#         ]
-#
-#     def run_tests(self):
-#         # import here, cause outside the eggs aren't loaded
-#         import pytest
-#         errno = pytest.main(self.pytest_args)
-#         sys.exit(errno)
-
-
-with open('README.rst', 'rb') as fp:
-    long_description = fp.read().decode('utf-8')
-
+with open('HISTORY.rst') as history_file:
+    history = history_file.read()
 with open('requirements.txt') as fp:
     install_requires = fp.read().split()
 
@@ -40,7 +21,7 @@ setup(
     version=hfut_stu_lib.__version__,
     keywords=('hfut', 'edu', 'student', 'interface'),
     description=hfut_stu_lib.__doc__,
-    long_description=long_description,
+    long_description=readme + '\n\n' + history,
     license=hfut_stu_lib.__license__,
 
     author=hfut_stu_lib.__author__,

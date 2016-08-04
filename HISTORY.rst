@@ -22,8 +22,8 @@
 
 **问题修复**
 
-- 修复 Python2 下 ``urllib.unquote`` 不接受编码参数的错误( ``hfut_stu_lib.model.StudentSession#login`` )
-- 修复 Python2 下 ``list`` 对象缺少 ``copy()`` 方法的错误( ``hfut_stu_lib.util.filter_curriculum``)
+- 修复 Python2 下 ``urllib.unquote`` 不接受编码参数的错误( :meth:`model.StudentSession.login` )
+- 修复 Python2 下 ``list`` 对象缺少 ``copy()`` 方法的错误( :func:`util.filter_curriculum` )
 - 修复时多线程时释放锁的方法名拼写错误
 - 修复 :meth:`model.StudentSession#get_selectable_courses` 文件名重复地添加'.json'后缀
 
