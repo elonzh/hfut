@@ -6,8 +6,9 @@
 使用 bottle 编写的一个简单课表查看页面, 可以筛选每周的课程, 可以在手机上安装 qpython 并安装好 hfu_stu_lib 后在手机上运行
 """
 from bottle import Bottle, template
-from hfut_stu_lib import StudentSession
-from hfut_stu_lib.util import filter_curriculum
+
+from hfut import StudentSession
+from hfut.util import filter_curriculum
 
 index_tpl = """
 <!DOCTYPE html>

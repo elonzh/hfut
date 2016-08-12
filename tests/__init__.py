@@ -5,7 +5,7 @@ import logging
 
 import six
 
-from hfut_stu_lib import logger
+from hfut import logger
 
 logger.setLevel(logging.DEBUG)
 

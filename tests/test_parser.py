@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 from bs4 import BeautifulSoup
 
-from hfut_stu_lib import parser, BaseSession
+from hfut import parser, BaseSession
 
 
 class TestParser(object):

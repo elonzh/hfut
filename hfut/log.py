@@ -8,7 +8,7 @@ from logging import Logger, WARNING, StreamHandler, Formatter
 
 __all__ = ['logger', 'unstable', 'log_result_not_found']
 
-logger = Logger('hfut_stu_lib', level=WARNING)
+logger = Logger('hfut', level=WARNING)
 
 sh = StreamHandler()
 # https://docs.python.org/3/library/logging.html#logrecord-attributes

@@ -1,4 +1,4 @@
 [run]
-source = hfut_stu_lib
+source = hfut
 [html]
 directory = coverage_html_report

@@ -5,7 +5,7 @@ import csv
 
 import pytest
 
-from hfut_stu_lib import StudentSession
+from hfut import StudentSession
 from tests import TestBase
 
 # http://docs.pytest.org/en/latest/usage.html
@@ -13,7 +13,7 @@ pytest_args = [
     '--cov-config', '.coveragerc',
     # '--cov-report', 'html',
     '--cov-report', 'term-missing',
-    '--cov=hfut_stu_lib', 'tests/',
+    '--cov=hfut', 'tests/',
     '--doctest-modules',
     # '--pdb'
 ]

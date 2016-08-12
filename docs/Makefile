@@ -2,7 +2,7 @@
 #
 
 # You can set these variables from the command line.
-PROJECT       = ../hfut_stu_lib
+PROJECT       = ../hfut
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
@@ -96,9 +96,9 @@ qthelp:
 	@echo
 	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
 	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
-	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/hfut_stu_lib.qhcp"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/hfut.qhcp"
 	@echo "To view the help file:"
-	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/hfut_stu_lib.qhc"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/hfut.qhc"
 
 applehelp:
 	$(SPHINXBUILD) -b applehelp $(ALLSPHINXOPTS) $(BUILDDIR)/applehelp
@@ -113,8 +113,8 @@ devhelp:
 	@echo
 	@echo "Build finished."
 	@echo "To view the help file:"
-	@echo "# mkdir -p $$HOME/.local/share/devhelp/hfut_stu_lib"
-	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/hfut_stu_lib"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/hfut"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/hfut"
 	@echo "# devhelp"
 
 epub:

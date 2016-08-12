@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import pytest
 
-from hfut_stu_lib import util
+from hfut import util
 from . import TestBase
 
 

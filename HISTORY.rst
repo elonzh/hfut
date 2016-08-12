@@ -21,6 +21,7 @@
 ++++++++++++++++
 **行为改变**
 
+- 包名由 ``hfut_stu_lib`` 改为 ``hfut
 - 删除了 ``APIResult`` , 使用 ``model.BaseSession.histories`` (默认最大长度为10的双端队列)储存历史响应
 
 **问题修复**
@@ -46,8 +47,8 @@
 
 **功能和改进**
 
-- 重新实现了类的属性验证方式, :func:`hfut_stu_lib.value.validate_attrs`
-- 添加了对 `model.StudentSession.account`, `hfut_stu_lib.model.BaseSession.campus` 的验证
+- 重新实现了类的属性验证方式, :func:`hfut.value.validate_attrs`
+- 添加了对 `model.StudentSession.account`, `hfut.model.BaseSession.campus` 的验证
 
 **行为改变**
 

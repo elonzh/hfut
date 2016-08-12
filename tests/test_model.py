@@ -5,7 +5,7 @@ import random
 
 import pytest
 
-from hfut_stu_lib import HF, ValidationError, XC
+from hfut import HF, ValidationError, XC
 from . import TestBase
 
 

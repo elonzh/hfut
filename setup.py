@@ -3,7 +3,7 @@
 # from __future__ import unicode_literals
 from setuptools import setup, find_packages
 
-import hfut_stu_lib
+import hfut
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -13,31 +13,22 @@ with open('HISTORY.rst') as history_file:
 with open('requirements.txt') as fp:
     install_requires = fp.read().split()
 
-# with open('dev-requirements.txt') as fp:
-#     tests_require = fp.read().split()
-
 setup(
-    name=hfut_stu_lib.__title__,
-    version=hfut_stu_lib.__version__,
+    name=hfut.__title__,
+    version=hfut.__version__,
     keywords=('hfut', 'edu', 'student', 'interface'),
-    description=hfut_stu_lib.__doc__,
+    description=hfut.__doc__,
     long_description=readme + '\n\n' + history,
-    license=hfut_stu_lib.__license__,
+    license=hfut.__license__,
 
-    author=hfut_stu_lib.__author__,
-    author_email=hfut_stu_lib.__author_email__,
-    url=hfut_stu_lib.__url__,
+    author=hfut.__author__,
+    author_email=hfut.__author_email__,
+    url=hfut.__url__,
 
     packages=find_packages(),
     platforms='any',
 
-    # setup_requires=['pytest-runner'],
     install_requires=install_requires,
-    # tests_require=tests_require,
-    # cmdclass={'test': PyTest},
-    # test_suite='tests',
-
-    # data_files=[('', ['README.rst', 'CHANGES.md', 'LICENSE'])],
     classifiers=[
         # How mature is this project? Common values are
         #   3 - Alpha

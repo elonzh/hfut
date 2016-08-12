@@ -1,27 +1,27 @@
 .. _api:
 
-hfut_stu_lib 的主要 API
+hfut 的主要 API
 ===================================
 
-hfut_stu_lib.model 核心接口模块
+hfut.model 核心接口模块
 ---------------------------------------------
-.. automodule:: hfut_stu_lib.model
+.. automodule:: hfut.model
 
-.. autoclass:: hfut_stu_lib.model.APIResult
+.. autoclass:: hfut.model.APIResult
     :members:
 
-.. autoclass:: hfut_stu_lib.model.BaseSession
+.. autoclass:: hfut.model.BaseSession
     :members:
 
-.. autoclass:: hfut_stu_lib.model.GuestSession
+.. autoclass:: hfut.model.GuestSession
     :members:
 
-.. autoclass:: hfut_stu_lib.model.StudentSession
+.. autoclass:: hfut.model.StudentSession
     :members:
 
 
-hfut_stu_lib.util 辅助函数模块
+hfut.util 辅助函数模块
 ---------------------------------------------------------
 
-.. automodule:: hfut_stu_lib.util
+.. automodule:: hfut.util
     :members:

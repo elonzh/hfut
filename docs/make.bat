@@ -13,7 +13,7 @@ if NOT "%PAPER%" == "" (
 	set I18NSPHINXOPTS=-D latex_paper_size=%PAPER% %I18NSPHINXOPTS%
 )
 
-set PROJECT=../hfut_stu_lib
+set PROJECT=../hfut
 
 rem ----- 自己添加的编译参数 -----
 if "%1" == "autodoc" (
@@ -141,9 +141,9 @@ if "%1" == "qthelp" (
 	echo.
 	echo.Build finished; now you can run "qcollectiongenerator" with the ^
 .qhcp project file in %BUILDDIR%/qthelp, like this:
-	echo.^> qcollectiongenerator %BUILDDIR%\qthelp\hfut_stu_lib.qhcp
+	echo.^> qcollectiongenerator %BUILDDIR%\qthelp\hfut.qhcp
 	echo.To view the help file:
-	echo.^> assistant -collectionFile %BUILDDIR%\qthelp\hfut_stu_lib.ghc
+	echo.^> assistant -collectionFile %BUILDDIR%\qthelp\hfut.ghc
 	goto end
 )
 

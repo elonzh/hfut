@@ -6,7 +6,7 @@
 开发哲学
 ----------
 
-hfut_stu_lib 是以 :pep:`20` 的习语为中心开发的
+hfut 是以 :pep:`20` 的习语为中心开发的
 
 
 #. Beautiful is better than ugly.(美丽优于丑陋)
@@ -15,7 +15,7 @@ hfut_stu_lib 是以 :pep:`20` 的习语为中心开发的
 #. Complex is better than complicated.(复杂优于繁琐)
 #. Readability counts.(重要的是可读性)
 
-对于 hfut_stu_lib 所有的贡献都应牢记这些重要的准则.
+对于 hfut 所有的贡献都应牢记这些重要的准则.
 
 .. _`license`:
 
@@ -38,6 +38,6 @@ Requests is released under terms of `MIT License`_.
 .. _`MIT License`: https://opensource.org/licenses/MIT
 
 
-hfut_stu_lib 协议
+hfut 协议
 -----------------------------
     .. include:: ../../LICENSE

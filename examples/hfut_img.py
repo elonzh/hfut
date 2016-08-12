@@ -3,14 +3,17 @@
 抓取全校学生的照片
 """
 from __future__ import unicode_literals
-import six
-import threading
+
 import logging
-import requests
 import os
 import sys
-from hfut_stu_lib import GuestSession, XC, HF
-from hfut_stu_lib.util import cal_term_code
+import threading
+
+import requests
+import six
+
+from hfut import GuestSession, XC, HF
+from hfut.util import cal_term_code
 
 # 文件保存路径
 DIR_NAME = 'img'

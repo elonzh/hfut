@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 """
-hfut_stu_lib 核心的模块, 包括了 :class:`models.APIResult` 和包含各个接口的各个 ``Session`` 类, 继承关系如下:
+hfut 核心的模块, 包括了 :class:`models.APIResult` 和包含各个接口的各个 ``Session`` 类, 继承关系如下:
 
 :class:`requests.sessions.Session` ->
 

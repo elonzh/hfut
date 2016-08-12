@@ -3,13 +3,13 @@
 快速上手
 ============
 
-迫不及待了吗？本页内容为如何入门 hfut_stu_lib 提供了很好的指引.其假设你已经安装了 hfut_stu_lib.如果还没有，
+迫不及待了吗？本页内容为如何入门 hfut 提供了很好的指引.其假设你已经安装了 hfut.如果还没有，
 去 :ref:`安装 <install>` 一节看看吧.
 
 首先，确认一下:
 
-* hfut_stu_lib 已 :ref:`安装 <install>`
-* hfut_stu_lib 已 :ref:`更新 <updates>`
+* hfut 已 :ref:`安装 <install>`
+* hfut 已 :ref:`更新 <updates>`
 
 
 .. _commonparm:
@@ -30,7 +30,7 @@
 调用接口
 ----------
 
-    >>> from hfut_stu_lib import StudentSession
+    >>> from hfut import StudentSession
     >>> stu = StudentSession('your-account', 'your-password')
     >>> stu.get_my_info()
 
