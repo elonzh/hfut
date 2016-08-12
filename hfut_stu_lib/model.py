@@ -14,10 +14,10 @@ hfut_stu_lib 核心的模块, 包括了 :class:`models.APIResult` 和包含各�
 from __future__ import unicode_literals, division
 
 import json
-import os
 import re
 import time
-from threading import Thread, Lock
+from collections import deque
+from threading import Thread
 
 import requests
 import six
@@ -29,7 +29,7 @@ from .parser import parse_tr_strs, flatten_list, dict_list_2_tuple_set, parse_co
 from .value import XC, HF, HOSTS, TERM_PATTERN, XC_PASSWORD_PATTERN, ACCOUNT_PATTERN, HF_PASSWORD_PATTERN, \
     validate_attrs
 
-__all__ = ['APIResult', 'BaseSession', 'GuestSession', 'StudentSession']
+__all__ = ['BaseSession', 'GuestSession', 'StudentSession']
 
 
 def _get_curriculum(session, url, params=None):
@@ -66,58 +66,7 @@ def _get_curriculum(session, url, params=None):
     # 去除第一行的序号
     curriculum = new_matrix[1:]
     weeks = weeks or {0}
-    return APIResult({'课表': curriculum,
-                      '起始周': min(weeks),
-                      '结束周': max(weeks)},
-                     response)
-
-
-@six.python_2_unicode_compatible
-class APIResult(object):
-    """
-    所有接口返回数据的封装
-    """
-
-    def __init__(self, data=None, response=None):
-        """
-        :param data: 接口返回的数据
-        :type response: :class:`requests.Response`
-        """
-        super(APIResult, self).__init__()
-        self.response = response
-        self.data = data
-
-    def json(self, skipkeys=False, ensure_ascii=False, check_circular=True,
-             allow_nan=True, cls=None, indent=None, separators=None,
-             default=None, sort_keys=False, **kw):
-        """
-        将数据转换为 json 字符串, 参数与 json.dumps 一致
-        """
-        return json.dumps(self.data, skipkeys, ensure_ascii, check_circular, allow_nan, cls, indent, separators,
-                          default, sort_keys, **kw)
-
-    def store_api_result(self, basename=None, dir_path=None, encoding='utf-8'):
-        """
-        如果有的话, 将请求对象的数据和响应内容保存在本地
-
-        :param basename: 保存的不带后缀的文件名, 默认为 `api_result`
-        :param dir_path: 保存的文件夹
-        :param encoding: 文件编码
-        """
-        basename = basename or 'api_result'
-        filename = os.path.join(dir_path, basename)
-        if self.response:
-            with open(filename + '.html', 'wb') as fp:
-                fp.write(self.response.text.encode(encoding))
-        json_str = json.dumps(self.data, ensure_ascii=False, indent=4, sort_keys=True)
-        with open(filename + '.json', 'wb') as fp:
-            fp.write(json_str.encode(encoding))
-
-    def __str__(self):
-        if self.response:
-            request = self.response.request
-            return '<APIResult> [{:s}] {:s}'.format(request.method, request.url)
-        return '<APIResult> without response'
+    return {'课表': curriculum, '起始周': min(weeks), '结束周': max(weeks)}
 
 
 @validate_attrs({'campus': 'validate_campus'})
@@ -133,6 +82,7 @@ class BaseSession(requests.Session):
                       'Chrome/45.0.2454.101 Safari/537.36'
     }
     html_parser = 'html.parser'
+    histories = deque(maxlen=10)
 
     def api_request(self, method, url, **kwargs):
         """
@@ -145,6 +95,7 @@ class BaseSession(requests.Session):
             url = six.moves.urllib.parse.urljoin(self.host, url)
         response = self.request(method, url, **kwargs)
         response.encoding = self.site_encoding
+        self.histories.append(response)
         elapsed = response.elapsed.total_seconds() * 1000
         logger.debug('[%s] %s 请求成功,请求耗时 %d ms\n参数: %s', method, url, elapsed, kwargs)
         return response
@@ -214,7 +165,7 @@ class GuestSession(BaseSession):
             '选课计划': plans,
             '当前轮数': current_round
         }
-        return APIResult(result, response)
+        return result
 
     def get_class_students(self, xqdm, kcdm, jxbh):
         """
@@ -244,10 +195,10 @@ class GuestSession(BaseSession):
         if term and class_name and stus:
             # stus = [{'序号': int(v[0]), '学号': int(v[1]), '姓名': v[2]} for v in stus]
             stus = [{'学号': int(v[1]), '姓名': v[2]} for v in stus]
-            return APIResult({'学期': term.group(), '班级名称': class_name.group(), '学生': stus}, response)
+            return {'学期': term.group(), '班级名称': class_name.group(), '学生': stus}
         elif page.find('无此教学班') != -1:
             log_result_not_found(page)
-            return APIResult(response=response)
+            return None
         else:
             msg = '\n'.join(['没有匹配到信息, 可能出现了一些问题', page])
             logger.error(msg)
@@ -278,7 +229,7 @@ class GuestSession(BaseSession):
         key_list = [list(tr.stripped_strings) for tr in bs.find_all('tr', bgcolor='#B4B9B9')]
         if len(key_list) != 3:
             log_result_not_found(page)
-            return APIResult(response=response)
+            return None
         # 有7行, 前三行与 key_list 对应, 后四行是单行属性, 键与值在同一行
         trs = bs.find_all('tr', bgcolor='#D6D3CE')
         # 最后的 备注, 禁选范围 两行外面包裹了一个 'tr' bgcolor='#D6D3CE' 时间地点 ......
@@ -299,7 +250,7 @@ class GuestSession(BaseSession):
             k = kv[0]
             v = None if len(kv) == 1 else kv[1]
             class_info[k] = v
-        return APIResult(class_info, response)
+        return class_info
 
     def search_course(self, xqdm, kcdm=None, kcmc=None):
         """
@@ -336,10 +287,10 @@ class GuestSession(BaseSession):
                 course['课程代码'] = course['课程代码'].upper()
                 course['班级容量'] = int(course['班级容量'])
                 courses.append(course)
-            return APIResult(courses, response)
+            return courses
         else:
             log_result_not_found(page)
-            return APIResult(response=response)
+            return None
 
     def get_teaching_plan(self, xqdm, kclx='b', zydm=''):
         """
@@ -369,7 +320,7 @@ class GuestSession(BaseSession):
         keys = tuple(trs[1].stripped_strings)
         if len(keys) != 6:
             log_result_not_found(page)
-            return APIResult(response=response)
+            return None
 
         value_list = parse_tr_strs(trs[2:])
         teaching_plan = []
@@ -384,7 +335,7 @@ class GuestSession(BaseSession):
             plan['学时'] = int(plan['学时'])
             plan['学分'] = float(plan['学分'])
             teaching_plan.append(plan)
-        return APIResult(teaching_plan, response)
+        return teaching_plan
 
     def get_teacher_info(self, jsh):
         """
@@ -406,7 +357,7 @@ class GuestSession(BaseSession):
         bs = BeautifulSoup(page, self.html_parser, parse_only=ss)
         if not bs.text:
             log_result_not_found(page)
-            return APIResult(response=response)
+            return None
         value_list = parse_tr_strs(bs.find_all('tr'))
         # 第一行最后有个照片项
         teacher_info = {'照片': value_list[0].pop()}
@@ -420,7 +371,7 @@ class GuestSession(BaseSession):
         for v in value_list:
             for i in range(0, len(v), 2):
                 teacher_info[v[i]] = v[i + 1]
-        return APIResult(teacher_info, response)
+        return teacher_info
 
     def get_course_classes(self, kcdm):
         """
@@ -443,7 +394,7 @@ class GuestSession(BaseSession):
         bs = BeautifulSoup(page, self.html_parser, parse_only=ss)
         class_table = bs.select_one('#JXBTable')
         if class_table.get_text(strip=True) == '对不起！该课程没有可被选的教学班。':
-            return APIResult(None, response)
+            return None
 
         result = dict()
         _, result['课程代码'], result['课程名称'] = bs.select_one('#KcdmTable').stripped_strings
@@ -482,7 +433,7 @@ class GuestSession(BaseSession):
             course_classes.append(cls_info)
 
         result['可选班级'] = course_classes
-        return APIResult(result, response)
+        return result
 
     def get_entire_curriculum(self, xqdm=None):
         """
@@ -613,7 +564,7 @@ class StudentSession(GuestSession):
         ccjbyxzy = [{'专业代码': node['value'], '专业名称': node.string.strip()} for node in ccjbyxzy_options]
         result = {'学期': xqdm, '专业': ccjbyxzy}
 
-        return APIResult(result, response)
+        return result
 
     def get_my_info(self):
         """
@@ -659,7 +610,7 @@ class StudentSession(GuestSession):
 
         stu_info['学号'] = int(stu_info['学号'])
         stu_info['考生号'] = int(stu_info['考生号'])
-        return APIResult(stu_info, response)
+        return stu_info
 
     def get_my_achievements(self):
         """
@@ -684,7 +635,7 @@ class StudentSession(GuestSession):
             grade['课程代码'] = grade['课程代码'].upper()
             grade['学分'] = float(grade['学分'])
             grades.append(grade)
-        return APIResult(grades, response)
+        return grades
 
     def get_my_curriculum(self):
         """
@@ -719,7 +670,7 @@ class StudentSession(GuestSession):
             feed['学分'] = float(feed['学分'])
             feed['收费(元)'] = float(feed['收费(元)'])
             feeds.append(feed)
-        return APIResult(feeds, response)
+        return feeds
 
     def change_password(self, new_password):
         """
@@ -735,12 +686,12 @@ class StudentSession(GuestSession):
         if new_password == self.password:
             msg = '原密码与新密码相同'
             logger.warning(msg)
-            return APIResult(True)
+            return True
         # 若不满足密码修改条件便不做请求
         if not XC_PASSWORD_PATTERN.match(new_password):
             msg = '密码为6-12位小写字母或数字'
             logger.warning(msg)
-            return APIResult(False)
+            return False
 
         method = 'post'
         url = 'student/asp/amend_password_jg.asp'
@@ -755,10 +706,10 @@ class StudentSession(GuestSession):
         res = bs.text.strip()
         if res == '密码修改成功！':
             self.password = new_password
-            return APIResult(True, response)
+            return True
         else:
             logger.warning('密码修改失败\nnewpwd: %s\ntext: %s', new_password, res)
-            return APIResult(False, response)
+            return False
 
     def set_telephone(self, tel):
         """
@@ -772,7 +723,7 @@ class StudentSession(GuestSession):
         p = re.compile(r'^\d{11,12}$|^\d{4}-\d{7}$')
         if not p.match(tel):
             logger.warning('电话格式不匹配')
-            return APIResult(False)
+            return False
 
         method = 'post'
         url = 'student/asp/amend_tel.asp'
@@ -782,7 +733,7 @@ class StudentSession(GuestSession):
         page = response.text
         ss = SoupStrainer('input', attrs={'name': 'tel'})
         bs = BeautifulSoup(page, self.html_parser, parse_only=ss)
-        return APIResult(bs.input['value'] == tel, response)
+        return bs.input['value'] == tel
 
     # ========== 选课功能相关 ==========
     def get_optional_courses(self, kclx='x'):
@@ -815,7 +766,7 @@ class StudentSession(GuestSession):
                       '开课院系': values[3],
                       '学分': float(values[4])}
             courses.append(course)
-        return APIResult(courses, response)
+        return courses
 
     def get_selected_courses(self):
         """
@@ -842,7 +793,7 @@ class StudentSession(GuestSession):
             course['学分'] = float(course['学分'])
             course['费用'] = float(course['费用'])
             courses.append(course)
-        return APIResult(courses, response)
+        return courses
 
     def change_course(self, select_courses=None, delete_courses=None):
         """
@@ -854,7 +805,7 @@ class StudentSession(GuestSession):
         :param delete_courses: 需要删除的课程代码列表, 如 ``['0200011B']``
         :return: 选课结果, 返回选中的课程教学班列表, 结构与 ``get_selected_courses`` 一致
         """
-        t = self.get_system_state().data
+        t = self.get_system_state()
         if t['当前轮数'] is None:
             raise ValueError('当前为 %s,选课系统尚未开启', t['当前学期'])
         if not (select_courses or delete_courses):
@@ -863,7 +814,7 @@ class StudentSession(GuestSession):
         select_courses = select_courses or []
         delete_courses = {l.upper() for l in (delete_courses or [])}
 
-        selected_courses = self.get_selected_courses().data
+        selected_courses = self.get_selected_courses()
         selected_kcdms = {course['课程代码'] for course in selected_courses}
 
         # 尝试删除没有被选中的课程会出错
@@ -927,7 +878,7 @@ class StudentSession(GuestSession):
             r = p.findall(page)
             if not r:
                 logger.warning('正则没有匹配到结果, 可能出现了一些状况')
-                return APIResult(response=response)
+                return None
             msg_results = []
             for g in r:
                 logger.info(' '.join(g))
@@ -943,7 +894,7 @@ class StudentSession(GuestSession):
                   '选中课程': dict_list_2_tuple_set(selected, reverse=True) or None}
         logger.debug(result)
 
-        return APIResult(result, response)
+        return result
 
     def get_unfinished_evaluation(self):
         """
@@ -965,7 +916,7 @@ class StudentSession(GuestSession):
                 continue
             status = dict(zip(('课程代码', '课程名称', '教学班号'), values))
             result.append(status)
-        return APIResult(result, response)
+        return result
 
     def evaluate_course(self, kcdm, jxbh,
                         r101=1, r102=1, r103=1, r104=1, r105=1, r106=1, r107=1, r108=1, r109=1,
@@ -1019,9 +970,9 @@ class StudentSession(GuestSession):
         }
         response = self.api_request(method, url, data=data)
         if re.search('您已经成功提交', response.text):
-            return APIResult(True, response)
+            return True
         else:
-            return APIResult(False, response)
+            return False
 
     # ---------- 不需要专门的请求 ----------
     def check_courses(self, kcdms):
@@ -1033,10 +984,10 @@ class StudentSession(GuestSession):
         :param kcdms: 课程代码列表
         :return: 与课程代码列表长度一致的布尔值列表, 已为True,未选为False
         """
-        selected_courses = self.get_selected_courses().data
+        selected_courses = self.get_selected_courses()
         selected_kcdms = {course['课程代码'] for course in selected_courses}
         result = [True if kcdm in selected_kcdms else False for kcdm in kcdms]
-        return APIResult(result)
+        return result
 
     def get_selectable_courses(self, kcdms=None, dump_result=True, filename='可选课程.json', encoding='utf-8'):
         """
@@ -1054,23 +1005,20 @@ class StudentSession(GuestSession):
         :param encoding: 文件编码
         """
         now = time.time()
-        t = self.get_system_state().data
+        t = self.get_system_state()
         if not (t['选课计划'][0][1] < now < t['选课计划'][2][1]):
             logger.warning('只推荐在第一轮选课结束到第三轮选课结束之间的时间段使用本接口!')
 
-        kcdms = kcdms or [l['课程代码'] for l in self.get_optional_courses().data]
+        kcdms = kcdms or [l['课程代码'] for l in self.get_optional_courses()]
         result = []
 
-        lock = Lock()
-
         def target(kcdm):
-            course_classes = self.get_course_classes(kcdm).data
+            course_classes = self.get_course_classes(kcdm)
             if course_classes is not None:
                 course_classes['可选班级'] = [c for c in course_classes['可选班级'] if c['课程容量'] > c['选中人数']]
                 if len(course_classes['可选班级']) > 0:
-                    lock.acquire()
+                    # http://stackoverflow.com/questions/6319207/are-lists-thread-safe
                     result.append(course_classes)
-                    lock.release()
 
         threads = (Thread(target=target, args=(kcdm,), name=kcdm) for kcdm in kcdms)
         for t in threads:
@@ -1084,4 +1032,4 @@ class StudentSession(GuestSession):
             with open(filename, 'wb') as fp:
                 fp.write(json_str.encode(encoding))
             logger.debug('可选课程结果导出到了:%s', filename)
-        return APIResult(result)
+        return result

@@ -5,7 +5,7 @@
 from __future__ import unicode_literals, division
 
 from copy import deepcopy
-from threading import Thread, Lock
+from threading import Thread
 
 import requests
 import requests.exceptions
@@ -151,7 +151,6 @@ def rank_host_speed(exclude=None, timeout=(5, 10)):
         logger.debug('[%s] 被排除', h)
 
     available_hosts = []
-    lock = Lock()
 
     class HostCheckerThread(Thread):
         def __init__(self, host):
@@ -172,9 +171,8 @@ def rank_host_speed(exclude=None, timeout=(5, 10)):
                 logger.error('[%s] 连接失败!', self.host)
             else:
                 cost = res.elapsed.total_seconds() * 1000
-                lock.acquire()
+                # http://stackoverflow.com/questions/6319207/are-lists-thread-safe
                 available_hosts.append((cost, self.host))
-                lock.release()
                 logger.info('[%s] 请求成功,耗时 %.0f ms', self.host, cost)
 
     threads = [HostCheckerThread(u) for u in hosts]
