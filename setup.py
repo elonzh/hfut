@@ -1,17 +1,16 @@
 # -*- coding:utf-8 -*-
-# 在 Python2 下使用 unicode_literals 会导致自定义命令出错
-# from __future__ import unicode_literals
+from __future__ import unicode_literals
+
 from setuptools import setup, find_packages
 
 import hfut
 
-with open('README.rst') as readme_file:
-    readme = readme_file.read()
-
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
-with open('requirements.txt') as fp:
-    install_requires = fp.read().split()
+with open('README.rst', 'rb') as readme_file:
+    readme = readme_file.read().decode('utf-8')
+with open('HISTORY.rst', 'rb') as history_file:
+    history = history_file.read().decode('utf-8')
+with open('requirements.txt', 'rb') as fp:
+    install_requires = fp.read().decode('utf-8').split()
 
 setup(
     name=hfut.__title__,
