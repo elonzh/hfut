@@ -6,16 +6,16 @@ hfut - 合肥工业大学学生教务接口
 -----------
 
 .. image:: https://img.shields.io/github/license/er1iang/hfut.svg
-:target: https://github.com/er1iang/hfut/blob/master/LICENSE
+    :target: https://github.com/er1iang/hfut/blob/master/LICENSE
 
 .. image:: https://img.shields.io/pypi/v/hfut.svg
-:target: https://pypi.python.org/pypi/hfut
+    :target: https://pypi.python.org/pypi/hfut
 
 .. image:: https://img.shields.io/travis/er1iang/hfut.svg
-:target: https://travis-ci.org/er1iang/hfut
+    :target: https://travis-ci.org/er1iang/hfut
 
 .. image:: https://img.shields.io/coveralls/er1iang/hfut.svg?maxAge=2592000
-:target: https://coveralls.io/github/er1iang/hfut
+    :target: https://coveralls.io/github/er1iang/hfut
 
 
 hfut 提供了合肥工业大学教务系统学生端接口并提供了方便开发者开发围绕学生数据的一些工具.
