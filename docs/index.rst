@@ -15,10 +15,6 @@ hfut - 合工大教务接口文档
 .. image:: https://img.shields.io/travis/er1iang/hfut.svg
     :target: https://travis-ci.org/er1iang/hfut
 
-.. image:: https://img.shields.io/coveralls/er1iang/hfut.svg?maxAge=2592000
-    :target: https://coveralls.io/github/er1iang/hfut
-
-
 hfut 提供了合肥工业大学教务系统学生端接口并提供了方便开发者开发围绕学生数据的一些工具.
 
 
@@ -76,7 +72,7 @@ API 指南
 .. toctree::
     :maxdepth: 3
 
-            autodoc/hfut
+    autodoc/hfut
 
 社区指南
 ----------
