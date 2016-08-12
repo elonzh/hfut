@@ -7,9 +7,6 @@ hfut.model 核心接口模块
 ---------------------------------------------
 .. automodule:: hfut.model
 
-.. autoclass:: hfut.model.APIResult
-    :members:
-
 .. autoclass:: hfut.model.BaseSession
     :members:
 
@@ -24,4 +21,10 @@ hfut.util 辅助函数模块
 ---------------------------------------------------------
 
 .. automodule:: hfut.util
+    :members:
+
+hfut.parser 页面解析模块
+---------------------------------------------------------
+
+.. automodule:: hfut.parser
     :members:
