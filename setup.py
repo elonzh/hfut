@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 from setuptools import setup, find_packages
 
 import hfut
-
 with open('README.rst', 'rb') as readme_file:
     readme = readme_file.read().decode('utf-8')
 with open('HISTORY.rst', 'rb') as history_file:

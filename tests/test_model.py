@@ -16,7 +16,7 @@ class TestGuest(TestBase):
         kcdm = '0400073B'
         jxbh = '0001'
         res = self.session.get_class_students('025', kcdm, jxbh)
-        assert res is None
+        assert res == {}
         res = self.session.get_class_students('026', kcdm, jxbh)
         self.assert_dict_keys(res, keys)
         if self.session.campus == HF:
@@ -24,8 +24,13 @@ class TestGuest(TestBase):
         else:
             assert len(res['学生']) == 45
 
+        # 大学语文  0001班
+        self.session.get_class_students('022', '5202012B', '0001')
+        # 大学英语拓展（一）0001班
+        self.session.get_class_students('029', '9900039X', '0001')
+
     def test_get_class_info(self):
-        keys = ['时间地点', '开课单位', '禁选范围', '考核类型', '性别限制', '教学班号', '课程名称', '优选范围', '备 注',
+        keys = ['时间地点', '开课单位', '禁选范围', '考核类型', '性别限制', '教学班号', '课程名称', '优选范围', '备注',
                 '学分', '课程类型', '校区', '选中人数', '起止周']
         res = self.session.get_class_info('026', '0400073B', '0001')
         self.assert_dict_keys(res, keys)
@@ -40,7 +45,7 @@ class TestGuest(TestBase):
         self.assert_every_keys(res, keys)
         res = self.session.search_course('027', kcmc='微波')
         assert len(res) == 1
-        assert self.session.search_course('000', kcmc='臭傻逼') is None
+        assert self.session.search_course('000', kcmc='臭傻逼') == []
 
     def test_get_teaching_plan(self):
         keys = ['开课单位', '学时', '课程名称', '课程代码', '学分']

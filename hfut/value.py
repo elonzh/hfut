@@ -1,8 +1,7 @@
 # -*- coding:utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
-
 import re
-
+from functools import wraps
 import six
 
 HF = 'HF'
@@ -13,7 +12,9 @@ HOSTS = {HF: 'http://bkjw.hfut.edu.cn/', XC: 'http://222.195.8.201/'}
 TERM_PATTERN = re.compile(r'(\d{4})(?:|学年)-\d{4}学年\s*第(一|二|二/三)学期(|/暑期)')
 ACCOUNT_PATTERN = re.compile(r'^\d{10}$')
 XC_PASSWORD_PATTERN = re.compile(r'^[\da-z]{6,12}$')
-HF_PASSWORD_PATTERN = re.compile(r'^\S{6,16}$')
+HF_PASSWORD_PATTERN = re.compile(r'^[^\s,;*_?@#$%&()+=><]{6,16}$')
+
+ILLEGAL_CHARACTERS_PATTERN = re.compile(r'[,;*_?@#$%&()+=><]')
 
 
 def validate_attrs(validators):
@@ -42,3 +43,17 @@ def validate_attrs(validators):
         return cls
 
     return wrapper
+
+# todo: 对请求参数中的非法字符进行检查, 避免登陆成功后却因输入非法字符导致 IP 被封禁
+# inspect.getfullargspec(func)
+# Deprecated since version 3.5: Use signature() and Signature Object,
+#  which provide a better introspecting API for callables.
+# def validate_args(validators):
+#     def decorator(fn):
+#         @wraps(fn)
+#         def wrap(*args, **kwargs):
+#             pass
+#
+#         return wrap
+#
+#     return decorator

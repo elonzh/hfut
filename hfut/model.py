@@ -127,7 +127,7 @@ class GuestSession(BaseSession):
         """
         获取教务系统当前状态信息, 包括当前学期以及选课计划
 
-        @structure {'当前学期': str, '选课计划': list, '当前轮数': int or None}
+        @structure {'当前学期': str, '选课计划': [(float, float)], '当前轮数': int or None}
         """
         method = 'get'
         url = 'student/asp/s_welcome.asp'
@@ -187,18 +187,20 @@ class GuestSession(BaseSession):
         page = response.text
         # 狗日的网页代码写错了无法正确解析标签!
         term = TERM_PATTERN.search(page)
-        class_name_p = r'[\u4e00-\u9fa5\w-]+\d{4}班'
+        # 大学英语拓展（一）0001班
+        # 大学语文    0001班
+        class_name_p = r'\S+\s*\d{4}班'
         class_name = re.search(class_name_p, page)
         # 虽然 \S 能解决匹配失败中文的问题, 但是最后的结果还是乱码的
         stu_p = r'>\s*?(\d{1,3})\s*?</.*?>\s*?(\d{10})\s*?</.*?>\s*?([\u4e00-\u9fa5*]+)\s*?</'
         stus = re.findall(stu_p, page, re.DOTALL)
-        if term and class_name and stus:
+        if term and class_name:
             # stus = [{'序号': int(v[0]), '学号': int(v[1]), '姓名': v[2]} for v in stus]
             stus = [{'学号': int(v[1]), '姓名': v[2]} for v in stus]
             return {'学期': term.group(), '班级名称': class_name.group(), '学生': stus}
         elif page.find('无此教学班') != -1:
             log_result_not_found(page)
-            return None
+            return {}
         else:
             msg = '\n'.join(['没有匹配到信息, 可能出现了一些问题', page])
             logger.error(msg)
@@ -209,7 +211,7 @@ class GuestSession(BaseSession):
         获取教学班详情, 包括上课时间地点, 考查方式, 老师, 选中人数, 课程容量等等信息
 
         @structure {'校区': str,'开课单位': str,'考核类型': str,'课程类型': str,'课程名称': str,'教学班号': str,'起止周': str,
-        '时间地点': str,'学分': float,'性别限制': str,'优选范围': str,'禁选范围': str,'选中人数': int,'备 注': str}
+        '时间地点': str,'学分': float,'性别限制': str,'优选范围': str,'禁选范围': str,'选中人数': int,'备注': str}
 
         :param xqdm: 学期代码
         :param kcdm: 课程代码
@@ -229,7 +231,7 @@ class GuestSession(BaseSession):
         key_list = [list(tr.stripped_strings) for tr in bs.find_all('tr', bgcolor='#B4B9B9')]
         if len(key_list) != 3:
             log_result_not_found(page)
-            return None
+            return {}
         # 有7行, 前三行与 key_list 对应, 后四行是单行属性, 键与值在同一行
         trs = bs.find_all('tr', bgcolor='#D6D3CE')
         # 最后的 备注, 禁选范围 两行外面包裹了一个 'tr' bgcolor='#D6D3CE' 时间地点 ......
@@ -250,6 +252,7 @@ class GuestSession(BaseSession):
             k = kv[0]
             v = None if len(kv) == 1 else kv[1]
             class_info[k] = v
+        class_info['备注'] = class_info.pop('备 注')
         return class_info
 
     def search_course(self, xqdm, kcdm=None, kcmc=None):
@@ -290,7 +293,7 @@ class GuestSession(BaseSession):
             return courses
         else:
             log_result_not_found(page)
-            return None
+            return []
 
     def get_teaching_plan(self, xqdm, kclx='b', zydm=''):
         """
@@ -320,7 +323,7 @@ class GuestSession(BaseSession):
         keys = tuple(trs[1].stripped_strings)
         if len(keys) != 6:
             log_result_not_found(page)
-            return None
+            return []
 
         value_list = parse_tr_strs(trs[2:])
         teaching_plan = []
@@ -357,7 +360,7 @@ class GuestSession(BaseSession):
         bs = BeautifulSoup(page, self.html_parser, parse_only=ss)
         if not bs.text:
             log_result_not_found(page)
-            return None
+            return {}
         value_list = parse_tr_strs(bs.find_all('tr'))
         # 第一行最后有个照片项
         teacher_info = {'照片': value_list[0].pop()}
@@ -394,7 +397,7 @@ class GuestSession(BaseSession):
         bs = BeautifulSoup(page, self.html_parser, parse_only=ss)
         class_table = bs.select_one('#JXBTable')
         if class_table.get_text(strip=True) == '对不起！该课程没有可被选的教学班。':
-            return None
+            return {}
 
         result = dict()
         _, result['课程代码'], result['课程名称'] = bs.select_one('#KcdmTable').stripped_strings
@@ -878,7 +881,7 @@ class StudentSession(GuestSession):
             r = p.findall(page)
             if not r:
                 logger.warning('正则没有匹配到结果, 可能出现了一些状况')
-                return None
+                return []
             msg_results = []
             for g in r:
                 logger.info(' '.join(g))

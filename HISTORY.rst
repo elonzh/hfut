@@ -17,6 +17,20 @@
 ---------------
 
 
+1.4.1 (20160812)
+++++++++++++++++
+
+**行为改变**
+
+- 将当接口没有解析出结果时返回的 None 值改为相应的空的容器
+
+**问题修复**
+
+- fixme: 返回数据结构表达式定义不清淅
+- 修复 :meth:`hfut.model.GuestSession#get_class_info` 返回结果中的 ``备注`` 字段名中包含空格的错误
+- 修复 :meth:`model.GuestSession#get_class_students` 班级名称正则表达式匹配不完全导致的错误
+- 修复 :meth:`model.GuestSession#get_class_students` 在教学班没有学生时触发错误的问题
+
 1.4.0 (20160812)
 ++++++++++++++++
 **行为改变**
