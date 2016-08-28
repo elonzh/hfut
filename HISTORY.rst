@@ -17,6 +17,18 @@
 ---------------
 
 
+1.4.3 (20160829)
+++++++++++++++++
+
+**问题修复**
+
+- 修复 ``model.StudentSession#get_selectable_courses`` 由于 ``multiprocessing.dummy.Pool`` 在 Python 2.7 下不支持 with 语句导致的错误
+
+**其他杂项**
+
+- 修正了 ``model.StudentSession#change_course`` 中的文档错误
+- 改进了测试脚本, 修复由于测试脚本没有判断程序结束状态码导致有时测试失败结果没有捕捉到的问题
+
 1.4.2 (20160828)
 ++++++++++++++++
 
@@ -43,7 +55,6 @@
 
 **问题修复**
 
-- fixme: 返回数据结构表达式定义不清淅
 - 修复 :meth:`model.GuestSession#get_class_info` 返回结果中的 ``备注`` 字段名中包含空格的错误
 - 修复 :meth:`model.GuestSession#get_class_students` 班级名称正则表达式匹配不完全导致的错误
 - 修复 :meth:`model.GuestSession#get_class_students` 在教学班没有学生时触发错误的问题

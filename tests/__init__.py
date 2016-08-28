@@ -11,8 +11,6 @@ logger.setLevel(logging.DEBUG)
 
 
 class TestBase(object):
-    session = None
-
     def assert_every_keys(self, seq, keys):
         keys.sort()
         for v in seq:

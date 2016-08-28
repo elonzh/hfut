@@ -36,8 +36,8 @@ class TestUtil(TestBase):
         with pytest.raises(ValueError):
             util.get_point('蛤蛤')
 
-    def test_cal_gpa(self):
-        assert isinstance(util.cal_gpa(self.session.get_my_achievements()), tuple)
+    def test_cal_gpa(self, session):
+        assert isinstance(util.cal_gpa(session.get_my_achievements()), tuple)
 
     def test_cal_term_code(self):
         with pytest.raises(ValueError):
@@ -67,8 +67,8 @@ class TestUtil(TestBase):
             util.rank_host_speed(['qq.com'])
         assert util.rank_host_speed(timeout=0) == []
 
-    def test_filter_curriculum(self):
-        c = self.session.get_my_curriculum()['课表']
+    def test_filter_curriculum(self, session):
+        c = session.get_my_curriculum()['课表']
         res = util.filter_curriculum(c, 2)
         assert len(res) == 7
         for v in res:

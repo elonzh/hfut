@@ -805,8 +805,8 @@ class StudentSession(GuestSession):
 
         @structure [{'费用': float, '教学班号': str, '课程名称': str, '课程代码': str, '学分': float, '课程类型': str}]
 
-        :param select_courses: 形如 ``{'kcdm': '9900039X', jxbhs: ['0001', '0002']}`` 的课程代码与教学班号列表, jxbhs 可以为空代表选择所有可选班级
-        :param delete_courses: 需要删除的课程代码列表, 如 ``['0200011B']``
+        :param select_courses: 形如 ``[{'kcdm': '9900039X', 'jxbhs': {'0001', '0002'}}]`` 的课程代码与教学班号列表, jxbhs 可以为空代表选择所有可选班级
+        :param delete_courses: 需要删除的课程代码集合, 如 ``{'0200011B'}``
         :return: 选课结果, 返回选中的课程教学班列表, 结构与 ``get_selected_courses`` 一致
         """
         t = self.get_system_status()
@@ -1027,8 +1027,11 @@ class StudentSession(GuestSession):
                     # http://stackoverflow.com/questions/6319207/are-lists-thread-safe
                     return course_classes
 
-        with Pool(5) as pool:
-            result = list(filter(None, pool.map(target, kcdms)))
+        # Python 2.7 不支持 with 语法
+        pool = Pool(5)
+        result = list(filter(None, pool.map(target, kcdms)))
+        pool.close()
+        pool.join()
 
         if dump_result:
             json_str = json.dumps(result, ensure_ascii=False, indent=4, sort_keys=True)

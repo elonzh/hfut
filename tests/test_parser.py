@@ -4,9 +4,10 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from bs4 import BeautifulSoup
 
 from hfut import parser, BaseSession
+from . import TestBase
 
 
-class TestParser(object):
+class TestParser(TestBase):
     def test_parse_tr_strs(self):
         single_tag = "<tr><td>Fuck!</td></tr>"
         assert parser.parse_tr_strs([BeautifulSoup(single_tag, BaseSession.html_parser).tr]) == [['Fuck!']]
