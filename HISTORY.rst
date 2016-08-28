@@ -17,6 +17,23 @@
 ---------------
 
 
+1.4.2 (20160828)
+++++++++++++++++
+
+**功能和改进**
+
+- 优化了 ``model.StudentSession#get_selectable_courses`` 多线程操作
+
+**问题修复**
+
+- 修复了 ``model.StudentSession#get_selectable_courses`` 由于之前版本返回值的行为改变造成的错误
+- 修复了 ``model.StudentSession#change_course`` 由于之前版本返回值的行为改变造成的错误
+
+**行为改变**
+
+- ``model.GuestSession#get_system_state`` -> ``model.GuestSession#get_system_status`` (拼写错误这么久竟然没发现= =)
+- 去除了 ``log.unstable``
+
 1.4.1 (20160812)
 ++++++++++++++++
 
@@ -27,7 +44,7 @@
 **问题修复**
 
 - fixme: 返回数据结构表达式定义不清淅
-- 修复 :meth:`hfut.model.GuestSession#get_class_info` 返回结果中的 ``备注`` 字段名中包含空格的错误
+- 修复 :meth:`model.GuestSession#get_class_info` 返回结果中的 ``备注`` 字段名中包含空格的错误
 - 修复 :meth:`model.GuestSession#get_class_students` 班级名称正则表达式匹配不完全导致的错误
 - 修复 :meth:`model.GuestSession#get_class_students` 在教学班没有学生时触发错误的问题
 

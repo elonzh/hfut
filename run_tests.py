@@ -24,5 +24,3 @@ with open('test_accounts.csv') as fp:
         print(start_msg.center(72, '='))
         TestBase.session = StudentSession(account, password, campus)
         pytest.main(pytest_args)
-        end_msg = '使用 %s：%s 测试成功' % (campus, account)
-        print(end_msg.center(72, '='))

@@ -168,7 +168,7 @@ class TestStudent(TestBase):
     def test_change_course(self):
         # todo:需要自动调整选课测试参数
         # 选课系统未开启
-        t = self.session.get_system_state()
+        t = self.session.get_system_status()
         # 参数为空
         with pytest.raises(ValueError):
             self.session.change_course(select_courses=None, delete_courses=None)

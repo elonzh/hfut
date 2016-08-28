@@ -17,7 +17,7 @@ import json
 import re
 import time
 from collections import deque
-from threading import Thread
+from multiprocessing.dummy import Pool
 
 import requests
 import six
@@ -123,7 +123,7 @@ class GuestSession(BaseSession):
     无需登录就可使用的接口
     """
 
-    def get_system_state(self):
+    def get_system_status(self):
         """
         获取教务系统当前状态信息, 包括当前学期以及选课计划
 
@@ -397,6 +397,7 @@ class GuestSession(BaseSession):
         bs = BeautifulSoup(page, self.html_parser, parse_only=ss)
         class_table = bs.select_one('#JXBTable')
         if class_table.get_text(strip=True) == '对不起！该课程没有可被选的教学班。':
+            log_result_not_found(page)
             return {}
 
         result = dict()
@@ -808,7 +809,7 @@ class StudentSession(GuestSession):
         :param delete_courses: 需要删除的课程代码列表, 如 ``['0200011B']``
         :return: 选课结果, 返回选中的课程教学班列表, 结构与 ``get_selected_courses`` 一致
         """
-        t = self.get_system_state()
+        t = self.get_system_status()
         if t['当前轮数'] is None:
             raise ValueError('当前为 %s,选课系统尚未开启', t['当前学期'])
         if not (select_courses or delete_courses):
@@ -844,7 +845,7 @@ class StudentSession(GuestSession):
             jxbhs = set(kv['jxbhs']) if kv.get('jxbhs') else set()
 
             teaching_classes = self.get_course_classes(kcdm)
-            if teaching_classes is None:
+            if not teaching_classes:
                 logger.warning('课程[%s]没有可选班级', kcdm)
                 continue
 
@@ -1008,31 +1009,30 @@ class StudentSession(GuestSession):
         :param encoding: 文件编码
         """
         now = time.time()
-        t = self.get_system_state()
+        t = self.get_system_status()
         if not (t['选课计划'][0][1] < now < t['选课计划'][2][1]):
             logger.warning('只推荐在第一轮选课结束到第三轮选课结束之间的时间段使用本接口!')
 
-        kcdms = kcdms or [l['课程代码'] for l in self.get_optional_courses()]
-        result = []
+        def iter_kcdms():
+            for l in self.get_optional_courses():
+                yield l['课程代码']
+
+        kcdms = kcdms or iter_kcdms()
 
         def target(kcdm):
             course_classes = self.get_course_classes(kcdm)
-            if course_classes is not None:
+            if course_classes:
                 course_classes['可选班级'] = [c for c in course_classes['可选班级'] if c['课程容量'] > c['选中人数']]
                 if len(course_classes['可选班级']) > 0:
                     # http://stackoverflow.com/questions/6319207/are-lists-thread-safe
-                    result.append(course_classes)
+                    return course_classes
 
-        threads = (Thread(target=target, args=(kcdm,), name=kcdm) for kcdm in kcdms)
-        for t in threads:
-            t.start()
-
-        for t in threads:
-            t.join()
+        with Pool(5) as pool:
+            result = list(filter(None, pool.map(target, kcdms)))
 
         if dump_result:
             json_str = json.dumps(result, ensure_ascii=False, indent=4, sort_keys=True)
             with open(filename, 'wb') as fp:
                 fp.write(json_str.encode(encoding))
-            logger.debug('可选课程结果导出到了:%s', filename)
+            logger.info('可选课程结果导出到了:%s', filename)
         return result
