@@ -17,6 +17,13 @@
 ---------------
 
 
+1.4.4 (20160829)
+++++++++++++++++
+
+**问题修复**
+
+- 修复 ``model.StudentSession#change_course`` 旧版结果验证方法没有移除导致的问题
+
 1.4.3 (20160829)
 ++++++++++++++++
 
@@ -55,15 +62,15 @@
 
 **问题修复**
 
-- 修复 :meth:`model.GuestSession#get_class_info` 返回结果中的 ``备注`` 字段名中包含空格的错误
-- 修复 :meth:`model.GuestSession#get_class_students` 班级名称正则表达式匹配不完全导致的错误
-- 修复 :meth:`model.GuestSession#get_class_students` 在教学班没有学生时触发错误的问题
+- 修复 ``model.GuestSession#get_class_info`` 返回结果中的 ``备注`` 字段名中包含空格的错误
+- 修复 ``model.GuestSession#get_class_students`` 班级名称正则表达式匹配不完全导致的错误
+- 修复 ``model.GuestSession#get_class_students`` 在教学班没有学生时触发错误的问题
 
 1.4.0 (20160812)
 ++++++++++++++++
 **行为改变**
 
-- 包名由 ``hfut_stu_lib`` 改为 ``hfut
+- 包名由 ``hfut_stu_lib`` 改为 ``hfut``
 - 删除了 ``APIResult`` , 使用 ``model.BaseSession.histories`` (默认最大长度为10的双端队列)储存历史响应
 
 **问题修复**
@@ -75,10 +82,10 @@
 
 **问题修复**
 
-- 修复 Python2 下 ``urllib.unquote`` 不接受编码参数的错误( :meth:`model.StudentSession.login` )
-- 修复 Python2 下 ``list`` 对象缺少 ``copy()`` 方法的错误( :func:`util.filter_curriculum` )
+- 修复 Python2 下 ``urllib.unquote`` 不接受编码参数的错误( ``model.StudentSession.login`` )
+- 修复 Python2 下 ``list`` 对象缺少 ``copy()`` 方法的错误( ``util.filter_curriculum`` )
 - 修复时多线程时释放锁的方法名拼写错误
-- 修复 :meth:`model.StudentSession#get_selectable_courses` 文件名重复地添加'.json'后缀
+- 修复 ``model.StudentSession#get_selectable_courses`` 文件名重复地添加'.json'后缀
 
 **其他杂项**
 
@@ -89,12 +96,12 @@
 
 **功能和改进**
 
-- 重新实现了类的属性验证方式, :func:`hfut.value.validate_attrs`
+- 重新实现了类的属性验证方式, ``hfut.value.validate_attrs``
 - 添加了对 `model.StudentSession.account`, `hfut.model.BaseSession.campus` 的验证
 
 **行为改变**
 
-- :module:`exception` 中的 `WrongPasswordPattern` 改为了 `ValidationError`
+- ``exception`` 中的 `WrongPasswordPattern` 改为了 `ValidationError`
 
 **问题修复**
 
@@ -105,14 +112,14 @@
 
 **问题修复**
 
-- 修复 :func:`util.get_point` 对成绩数据判断的不完整导致的错误
-- 修复 :meth:`model.StudentSession.get_optional_courses` 分片错误导致总是缺失一门课程的错误
-- 修复 :meth:`model.GuestSession.get_teaching_plan` 查询公选课时教务系统返回大量重复课程的错误
-- 修复 :meth:`model.GuestSession.search_course` 结果数据格式化不完整
+- 修复 ``util.get_point`` 对成绩数据判断的不完整导致的错误
+- 修复 ``model.StudentSession.get_optional_courses`` 分片错误导致总是缺失一门课程的错误
+- 修复 ``model.GuestSession.get_teaching_plan`` 查询公选课时教务系统返回大量重复课程的错误
+- 修复 ``model.GuestSession.search_course`` 结果数据格式化不完整
 
 **行为改变**
 
-- :meth:`model.GuestSession.get_teaching_plan` 查询公选课时不再需要 `zydm` 参数
+- ``model.GuestSession.get_teaching_plan` 查询公选课时不再需要 `zydm`` 参数
 - 删除了所有返回结果中含有的 `序号` 字段
 
 1.3.0 (20160719)
@@ -120,23 +127,23 @@
 
 **功能和改进**
 
-- 添加了 :meth:`model.StudentSession.get_unfinished_evaluation` 接口用来查询未完成的课程评价
-- 添加了 :meth:`model.StudentSession.evaluate_course` 接口用来进行课程评价
+- 添加了 ``model.StudentSession.get_unfinished_evaluation`` 接口用来查询未完成的课程评价
+- 添加了 ``model.StudentSession.evaluate_course`` 接口用来进行课程评价
 - 添加了登录时的密码格式验证
-- 密码格式不正确时将会触发新增的 :class:`exception.WrongPasswordPattern`
+- 密码格式不正确时将会触发新增的 ``exception.WrongPasswordPattern``
 - 调整了日志记录格式
-- :func:`util.rank_host_speed` 对写操作加锁避免竞争冒险
-- :meth:`model.StudentSession.get_selectable_courses` 使用了多线程进行优化
+- ``util.rank_host_speed`` 对写操作加锁避免竞争冒险
+- ``model.StudentSession.get_selectable_courses`` 使用了多线程进行优化
 
 **行为改变**
 
-- 去掉了 :meth:`model.StudentSession.change_password` 多余的 `oldpwd`,`new2pwd` 参数, 合肥校区修改教务密码无意义, 因此不允许调用此接口
-- :meth:`model.StudentSession.login_session` 改为 :meth:`model.StudentSession.login` 并且不再有返回值, 同时也修复了上个版本需要主动调用的问题
+- 去掉了 ``model.StudentSession.change_password` 多余的 `oldpwd`,`new2pwd`` 参数, 合肥校区修改教务密码无意义, 因此不允许调用此接口
+- ``model.StudentSession.login_session`` 改为 ``model.StudentSession.login`` 并且不再有返回值, 同时也修复了上个版本需要主动调用的问题
 
 **问题修复**
 
-- :meth:`model.StudentSession.__str__` 格式化错误
-- :meth:`model.StudentSession.change_course` 中错误的属性引用
+- ``model.StudentSession.__str__`` 格式化错误
+- ``model.StudentSession.change_course`` 中错误的属性引用
 - 修复由于存在未完成的课程评价导致接口调用出错的问题
 
 1.2.2 (20160625)
@@ -144,32 +151,32 @@
 
 **小的改进**
 
-- :class:`model.StudentSession` 初始化成功后会从 cookie 中提取出姓名
-- 登录失败时将会触发新增的 :class:`exception.SystemLoginFailed`, IP被封会触发 :class:`exception.IPBanned`
+- ``model.StudentSession`` 初始化成功后会从 cookie 中提取出姓名
+- 登录失败时将会触发新增的 ``exception.SystemLoginFailed``, IP被封会触发 ``exception.IPBanned``
 
 **行为改变**
 
-- :class:`model.StudentSession` 实例化后不会自动登录，需要主动调用 :meth:`model.StudentSession.login_session` 登录, 这样可以在登陆前对实例进行其他初始化，例如配置代理等
+- ``model.StudentSession`` 实例化后不会自动登录，需要主动调用 ``model.StudentSession.login_session`` 登录, 这样可以在登陆前对实例进行其他初始化，例如配置代理等
 
 1.2.1 (20160511)
 ++++++++++++++++
 
 **问题修复**
 
-- 修复了 :func:`model._get_curriculum` 在没有获取到课表导致起始周和结束周在计算时出错的问题并相应添加了测试用例
+- 修复了 ``model._get_curriculum`` 在没有获取到课表导致起始周和结束周在计算时出错的问题并相应添加了测试用例
 
 1.2.0 (20160510)
 ++++++++++++++++
 
 **小的改进**
 
-- 优化了 :func:`utils.filter_curriculum`, 当课程冲突时会给出警告
+- 优化了 ``utils.filter_curriculum``, 当课程冲突时会给出警告
 
 **接口改变**
 
-- 接口会话初始化参数 ``is_hefei`` 变成了 ``campus`` ( :module:`value` 模块中的校区代码 ``HF``, ``XC``) 并且需要显示提供
-- 删除了 :class:`model.AuthSession` , :module:`value` 中的用户类型常量
-- 去除了 :class:`model.APIResult` 中的魔法方法, 保证了调用明确的原则
+- 接口会话初始化参数 ``is_hefei`` 变成了 ``campus`` ( ``value`` 模块中的校区代码 ``HF``, ``XC``) 并且需要显示提供
+- 删除了 ``model.AuthSession`` , ``value`` 中的用户类型常量
+- 去除了 ``model.APIResult`` 中的魔法方法, 保证了调用明确的原则
 
 **问题修复**
 
@@ -186,13 +193,13 @@
 
 **小的改进**
 
-- :meth:`model.APIResult.json` 支持了 `json.dumps` 的参数
-- 统一 :meth:`model.GuestSession.get_entire_curriculum` 和 :meth:`model.GuestSession.get_my_curriculum` 的代码
-- :meth:`model.GuestSession.get_entire_curriculum` 和 :meth:`model.GuestSession.get_my_curriculum` 返回值添加了起止周字段
+- ``model.APIResult.json`` 支持了 `json.dumps` 的参数
+- 统一 ``model.GuestSession.get_entire_curriculum`` 和 ``model.GuestSession.get_my_curriculum`` 的代码
+- ``model.GuestSession.get_entire_curriculum`` 和 ``model.GuestSession.get_my_curriculum`` 返回值添加了起止周字段
 
 **接口改变**
 
-- :func:`parser.parse_course` 不再接受 None 值为参数
+- ``parser.parse_course`` 不再接受 None 值为参数
 
 **文档**
 
@@ -207,23 +214,23 @@
 
 **功能和改进**
 
-- 添加了 :func:`utils.filter_curriculum`, 筛选出指定星期[和指定星期几]的课程
+- 添加了 ``utils.filter_curriculum``, 筛选出指定星期[和指定星期几]的课程
 - 所有接口文档添加里 ``@structure`` 描述标记用来描述返回数据的结构和类型
 
 **小的改进**
 
-- 添加 :func:`parser.zip` 函数保证 zip 过程的准确性
-- 添加 :func:`log.log_result_not_found` 输出当接口未解析出数据时的日志
+- 添加 ``parser.zip`` 函数保证 zip 过程的准确性
+- 添加 ``log.log_result_not_found`` 输出当接口未解析出数据时的日志
 
 **接口改变**
 
-- :func:`utils.get_host_speed_rank` 改名为 :func:`utils.rank_host_speed`
-- :func:`log.unfinished` 装饰器被移除
-- :func:`parser.parse_tr_strs` 不再接受单个的 ``Tag`` 对象作为参数, 同时现在 ``td`` 下有子标签也会解析结果, 不再报 ``ValueError``
+- ``utils.get_host_speed_rank`` 改名为 ``utils.rank_host_speed``
+- ``log.unfinished`` 装饰器被移除
+- ``parser.parse_tr_strs`` 不再接受单个的 ``Tag`` 对象作为参数, 同时现在 ``td`` 下有子标签也会解析结果, 不再报 ``ValueError``
 
 **行为改变**
 
-- :module:`__init__` 中的变量, 迁移到了 :module:`values`
+- ``__init__`` 中的变量, 迁移到了 ``values``
 
 **问题修复**
 
@@ -248,13 +255,13 @@
 
 **接口改变**
 
-- 所有继承自 :class:`model.BaseSession` 的类现在需要一个 ``is_hefei`` 参数来确定是否是合肥校区
+- 所有继承自 ``model.BaseSession`` 的类现在需要一个 ``is_hefei`` 参数来确定是否是合肥校区
 
 **问题修复**
 
-- 修复 :meth:`model.StudentSession.get_selected_courses` 的费用字段使用了错误的整数类型
-- 修复 :meth:`model.GuestSession.get_course_classes` 键值分离由于特殊情况导致的错误, 同时也对其他方法进行了相应的修改避免类似问题发生
-- 修复 :meth:`model.APIResult.__bool__` 错误
+- 修复 ``model.StudentSession.get_selected_courses`` 的费用字段使用了错误的整数类型
+- 修复 ``model.GuestSession.get_course_classes`` 键值分离由于特殊情况导致的错误, 同时也对其他方法进行了相应的修改避免类似问题发生
+- 修复 ``model.APIResult.__bool__`` 错误
 
 **文档**
 
@@ -278,29 +285,29 @@
 **功能和改进**
 
 - 精简了架构,现在接口区分更清晰,现在支持单独的会话配置,同时不会再因动态绑定接口而无法进行代码提示
-- 添加了 :func:`util.cal_term_code` 和 :func:`util.term_str2code` 计算学期代码
-- 添加了 :meth:`model.GuestSession.get_selecting_lesson_time` 查询选课时间
-- 添加 :func:`get_host_speed_rank`,由于宣城校区校内还有多个镜像站点,现在提供了测试地址速度排行的功能
+- 添加了 ``util.cal_term_code`` 和 ``util.term_str2code`` 计算学期代码
+- 添加了 ``model.GuestSession.get_selecting_lesson_time`` 查询选课时间
+- 添加 ``get_host_speed_rank``,由于宣城校区校内还有多个镜像站点,现在提供了测试地址速度排行的功能
 - 现在能够自动更新会话保持登录状态了
 
 **小的改进**
 
-- :func:`change_lesson` 现在能够判断当前是否能够选课
-- :func:`get_lessons_can_be_selected` 导出的结果现在是格式化后的了
-- :meth:`model.StudentSession.get_stu_timetable` 现在返回的上课周数为周数列表便于实际处理
-- :class:`get_selected_lessons` 结果中的 ``费用`` 和 ``学分`` 两个字段从字符串分别改为了整型和浮点型
-- 调整了 :meth:`model.GuestSession.get_teaching_plan` 的参数使使用更加方便
-- 统一了 :meth:`model.StudentSession.get_code` 的结果键值为中文
+- ``change_lesson`` 现在能够判断当前是否能够选课
+- ``get_lessons_can_be_selected`` 导出的结果现在是格式化后的了
+- ``model.StudentSession.get_stu_timetable`` 现在返回的上课周数为周数列表便于实际处理
+- ``get_selected_lessons`` 结果中的 ``费用`` 和 ``学分`` 两个字段从字符串分别改为了整型和浮点型
+- 调整了 ``model.GuestSession.get_teaching_plan`` 的参数使使用更加方便
+- 统一了 ``model.StudentSession.get_code`` 的结果键值为中文
 - 现在登录时能够判断是否是煞笔的防注入系统导致无法登陆并且如果是宣城校区会自动选取可用地址重新登录
 
 
 **接口改变**
 
 - 去除了 ``const``, ``session``, ``api``, ``api_request_builder``, ``core``
-- 将原来的 ``api`` 中所有的接口根据要求的登录权限不同分别迁移到了 :class:`model.GuestSession` 和 :class:`model.StudentSession`
+- 将原来的 ``api`` 中所有的接口根据要求的登录权限不同分别迁移到了 ``model.GuestSession`` 和 ``model.StudentSession``
 - 将原来的 ``core`` 中的 ``@unstable``, ``@unfinish`` 迁移到了 ``log`` 模块中
-- ``const`` 中的配置项迁移到了 :class:`BaseSession` 中, 现在的配置是会话级而不是全局的,这样可以方便的根据需要进行修改
-- :func:`util.store_api_result` 迁移到了 :meth:`model.APIResult.store_api_result` 并稍微调整了一下参数
+- ``const`` 中的配置项迁移到了 ``BaseSession`` 中, 现在的配置是会话级而不是全局的,这样可以方便的根据需要进行修改
+- ``util.store_api_result`` 迁移到了 ``model.APIResult.store_api_result`` 并稍微调整了一下参数
 - 重新命名了大量接口使其更易理解, 同时纠正命名的错误, 接口的重命名状态如下
     - ``get_selecting_lesson_time`` -> ``get_system_state``
     - ``search_lessons`` -> ``search_course``
@@ -317,17 +324,17 @@
 **行为改变**
 
 - 现在登录也看作是一个接口,进行了重构
-- 现在所有的接口返回的都是 :class:`model.APIResult` 对象
+- 现在所有的接口返回的都是 ``model.APIResult`` 对象
 
 **问题修复**
 
 - 修复发送登录权限不一致时仍会发送请求的问题
-- 修复 :class:`AuthSession` 初始化时参数判断逻辑错误
-- 修复 :class:`model.APIRequest` 初始化时继承参数错误
-- 修复 :func:`api.get_optional_lessons` 由于疏忽缺少一个参数
-- 修复 :meth:`model.StudentSession.get_stu_timetable` 上课周数匹配情况的遗漏
-- 修复 :meth:`model.GuestSession.search_lessons` 由于编码问题无法使用课程名称搜索的问题
-- 修复 :func:`parser.parse_tr_strs` 触发异常时字符串格式错误的问题
+- 修复 ``AuthSession`` 初始化时参数判断逻辑错误
+- 修复 ``model.APIRequest`` 初始化时继承参数错误
+- 修复 ``api.get_optional_lessons`` 由于疏忽缺少一个参数
+- 修复 ``model.StudentSession.get_stu_timetable`` 上课周数匹配情况的遗漏
+- 修复 ``model.GuestSession.search_lessons`` 由于编码问题无法使用课程名称搜索的问题
+- 修复 ``parser.parse_tr_strs`` 触发异常时字符串格式错误的问题
 
 **文档**
 

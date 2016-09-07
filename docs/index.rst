@@ -70,7 +70,7 @@ API 指南
 在这里你能看到所有接口的文档.
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 2
 
     autodoc/hfut
 

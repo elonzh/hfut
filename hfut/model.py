@@ -525,11 +525,9 @@ class StudentSession(GuestSession):
         if not logged_in:
             if 'SQL通用防注入系统' in response.text:
                 msg = '当前 IP 已被锁定,如果是宣城校内访问请切换教务系统地址,否则请在更换网络环境后重试'
-                logger.warning(msg)
                 raise IPBanned(msg)
             else:
                 msg = '登陆失败, 请检查你的账号和密码'
-                logger.error(msg)
                 raise SystemLoginFailed(msg)
 
         escaped_name = self.cookies.get('xsxm')
@@ -678,7 +676,7 @@ class StudentSession(GuestSession):
 
     def change_password(self, new_password):
         """
-        修改教务密码, **注意**合肥校区使用信息中心账号登录, 与教务密码不一致, 即使修改了也没有作用, 因此合肥校区帐号调用此接口会直接报错
+        修改教务密码, **注意** 合肥校区使用信息中心账号登录, 与教务密码不一致, 即使修改了也没有作用, 因此合肥校区帐号调用此接口会直接报错
 
         @structure bool
 
@@ -874,30 +872,31 @@ class StudentSession(GuestSession):
             logger.error(msg)
             raise ValueError(msg)
         else:
+            # 这里只是用作检查此方法是否稳定
             page = response.text
             # 当选择同意课程的多个教学班时, 若已选中某个教学班, 再选择其他班数据库会出错,
             # 其他一些不可预料的原因也会导致数据库出错
-            p = re.compile(r'(成功提交选课数据|容量已满,请选择其他教学班|已成功删除下列选课数据).+?'
-                           r'课程代码:\s*([\dbBxX]+)[\s;&nbsp]*教学班号:\s*(\d{4})', re.DOTALL)
-            r = p.findall(page)
-            if not r:
-                logger.warning('正则没有匹配到结果, 可能出现了一些状况')
-                return []
-            msg_results = []
-            for g in r:
-                logger.info(' '.join(g))
-                msg_result = dict(msg=g[0], kcdm=g[1], jxbh=g[2])
-                msg_results.append(msg_result)
-
+            p = re.compile(r'(成功提交选课数据|容量已满,请选择其他教学班|已成功删除下列选课数据).*?'
+                           r'课程代码：.*?([\dbBxX]{8}).*?'
+                           r'教学班号：.*?(\d{4})')
+            text = BeautifulSoup(page, self.html_parser).get_text(strip=True)
+            r = p.findall(text)
+            if r:
+                msg_results = []
+                for g in r:
+                    logger.info(' '.join(g))
+                    msg_result = dict(msg=g[0], kcdm=g[1], jxbh=g[2])
+                    msg_results.append(msg_result)
+                    logger.debug(msg_results)
+            else:
+                log_result_not_found(page)
         # 通过已选课程前后对比确定课程修改结果
         before_change = dict_list_2_tuple_set(selected_courses)
         after_change = dict_list_2_tuple_set(self.get_selected_courses())
         deleted = before_change.difference(after_change)
         selected = after_change.difference(before_change)
-        result = {'删除课程': dict_list_2_tuple_set(deleted, reverse=True) or None,
-                  '选中课程': dict_list_2_tuple_set(selected, reverse=True) or None}
-        logger.debug(result)
-
+        result = {'删除课程': dict_list_2_tuple_set(deleted, reverse=True) or [],
+                  '选中课程': dict_list_2_tuple_set(selected, reverse=True) or []}
         return result
 
     def get_unfinished_evaluation(self):
