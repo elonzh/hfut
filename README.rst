@@ -49,7 +49,7 @@ hfut 提供了合肥工业大学教务系统学生端接口并提供了方便开
 文档
 -----
 
-完整文档位于 http://hfut.readthedocs.org ,你只要花一点时间就能了解整个项目.
+完整文档位于 http://hfut-stu-lib.rtfd.io/ ,你只要花一点时间就能了解整个项目.
 
 
 **更新日志请查看:** `HISTORY.rst <https://github.com/er1iang/hfut/blob/master/HISTORY.rst>`_
