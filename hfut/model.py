@@ -823,8 +823,7 @@ class StudentSession(GuestSession):
         unselected = delete_courses.difference(selected_kcdms)
         if unselected:
             msg = '无法删除没有被选的课程 {}'.format(unselected)
-            logger.error(msg)
-            raise ValueError(msg)
+            logger.warning(msg)
 
         # 要提交的 kcdm 数据
         kcdms_data = []
@@ -853,10 +852,11 @@ class StudentSession(GuestSession):
                 wrong_jxbhs = jxbhs.difference(optional_jxbhs)
                 if wrong_jxbhs:
                     msg = '课程[{}]{}没有教学班号{}'.format(kcdm, teaching_classes['课程名称'], wrong_jxbhs)
-                    logger.error(msg)
-                    raise ValueError(msg)
+                    logger.warning(msg)
+                jxbhs = jxbhs.intersection(optional_jxbhs)
             else:
                 jxbhs = optional_jxbhs
+
             for jxbh in jxbhs:
                 kcdms_data.append(kcdm)
                 jxbhs_data.append(jxbh)

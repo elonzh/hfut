@@ -127,3 +127,4 @@ func_factory.py
 examples/img
 /test_accounts.csv
 /debug.ipynb
+/tests/test_accounts.csv

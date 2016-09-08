@@ -166,39 +166,29 @@ class TestStudent(TestBase):
         assert session.check_courses(['1234567', random.choice(res)['课程代码']]) == [False, True]
 
     def test_change_course(self, session):
-        # todo:需要自动调整选课测试参数
-        # 选课系统未开启
         t = session.get_system_status()
         # 参数为空
         with pytest.raises(ValueError):
             session.change_course(select_courses=None, delete_courses=None)
-        # 删除未选课程
-        with pytest.raises(ValueError):
-            session.change_course(select_courses=None, delete_courses=['1234567B'])
-        # 选择不存在的教学班
-        with pytest.raises(ValueError):
-            session.change_course(select_courses=[{'kcdm': '9900039X', 'jxbhs': ['0008']}], delete_courses=None)
         if t['当前轮数'] is not None:
-            # c = session.get_selected_courses()
+            selected_courses = session.get_selected_courses()
+            course = random.choice(selected_courses)
             # 选择已选中的课程
-            assert session.change_course([{'kcdm': '9900039X'}]) == {'删除课程': None, '选中课程': None}
-            # 修改班级
-            assert session.change_course([{'kcdm': '9900039X', 'jxbhs': ['0002']}], ['9900039X']) == {
-                '删除课程': [{'学分': '0',
-                          '教学班号': '0001',
-                          '课程代码': '9900039X',
-                          '课程名称': '大学英语拓展(一）',
-                          '课程类型': '任选',
-                          '费用': '0'}],
-                '选中课程': [{'学分': '0',
-                          '教学班号': '0002',
-                          '课程代码': '9900039X',
-                          '课程名称': '大学英语拓展(一）',
-                          '课程类型': '任选',
-                          '费用': '0'}]
-            }
-            # 恢复
-            session.change_course([{'kcdm': '9900039X', 'jxbhs': ['0001']}], ['9900039X'])
+            assert session.change_course([{'kcdm': course['课程代码'], 'jxbhs':[course['教学班号']]}]) == {'删除课程': [], '选中课程': []}
+
+            selectable_courses = session.get_selectable_courses(dump_result=False)
+            if selectable_courses:
+                course = random.choice(selectable_courses)
+                # 选择不存在的教学班
+                assert session.change_course([{'kcdm': course['课程代码'], 'jxbhs': ['12345']}]) == {'删除课程': [], '选中课程': []}
+
+                jxbh = random.choice(course['可选班级'])['教学班号']
+                # 修改班级
+                rv = session.change_course([{'kcdm': course['课程代码'], 'jxbhs': [jxbh]}])
+                # 恢复
+                assert rv['选中课程'] == session.change_course(delete_courses=[course['课程代码']])['删除课程']
+
+            assert selected_courses == session.get_selected_courses()
 
     def test_get_selectable_courses(self, tmpdir, session):
         session.get_selectable_courses(filename=tmpdir.join('可选课程.json').strpath)

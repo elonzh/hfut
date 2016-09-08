@@ -17,12 +17,21 @@
 ---------------
 
 
-1.4.4 (20160829)
+1.4.4 (2016XXXX)
 ++++++++++++++++
 
 **问题修复**
 
 - 修复 ``model.StudentSession#change_course`` 旧版结果验证方法没有移除导致的问题
+- 修复 ``model.StudentSession#change_course`` 对教学班号错误的验证逻辑
+
+**行为改变**
+
+- ``model.StudentSession#change_course`` : 当选课教学班号错误, 删除错误的课程时将不再触发错误, 而是得到一个警告
+
+**其他杂项**
+
+- 更新 ``model.StudentSession#change_course`` 测试用例
 
 1.4.3 (20160829)
 ++++++++++++++++
