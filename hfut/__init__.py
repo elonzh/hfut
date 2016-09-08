@@ -12,6 +12,7 @@ __url__ = 'https://github.com/er1iang/hfut'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2015-2016 erliang'
 
+from . import util, parser
 from .log import *
 from .model import *
 from .value import *
