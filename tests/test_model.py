@@ -166,29 +166,31 @@ class TestStudent(TestBase):
         assert session.check_courses(['1234567', random.choice(res)['课程代码']]) == [False, True]
 
     def test_change_course(self, session):
-        t = session.get_system_status()
         # 参数为空
         with pytest.raises(ValueError):
             session.change_course(select_courses=None, delete_courses=None)
-        if t['当前轮数'] is not None:
-            selected_courses = session.get_selected_courses()
-            course = random.choice(selected_courses)
-            # 选择已选中的课程
-            assert session.change_course([{'kcdm': course['课程代码'], 'jxbhs':[course['教学班号']]}]) == {'删除课程': [], '选中课程': []}
 
-            selectable_courses = session.get_selectable_courses(dump_result=False)
-            if selectable_courses:
-                course = random.choice(selectable_courses)
-                # 选择不存在的教学班
-                assert session.change_course([{'kcdm': course['课程代码'], 'jxbhs': ['12345']}]) == {'删除课程': [], '选中课程': []}
-
-                jxbh = random.choice(course['可选班级'])['教学班号']
-                # 修改班级
-                rv = session.change_course([{'kcdm': course['课程代码'], 'jxbhs': [jxbh]}])
-                # 恢复
-                assert rv['选中课程'] == session.change_course(delete_courses=[course['课程代码']])['删除课程']
-
-            assert selected_courses == session.get_selected_courses()
+        # 持续集成时是并行测试多个环境, 会产生不可预测的结果
+        # t = session.get_system_status()
+        # if t['当前轮数'] is not None:
+        #     selected_courses = session.get_selected_courses()
+        #     course = random.choice(selected_courses)
+        #     # 选择已选中的课程
+        #     rv = session.change_course(select_courses=[{'kcdm': course['课程代码'], 'jxbhs': [course['教学班号']]}])
+        #     assert rv == {'删除课程': [], '选中课程': []}
+        #     selectable_courses = session.get_selectable_courses(dump_result=False)
+        #     if selectable_courses:
+        #         course = random.choice(selectable_courses)
+        #         # 选择不存在的教学班
+        #         rv = session.change_course(select_courses=[{'kcdm': course['课程代码'], 'jxbhs': ['12345']}])
+        #         assert rv == {'删除课程': [], '选中课程': []}
+        #         jxbh = random.choice(course['可选班级'])['教学班号']
+        #         # 修改班级
+        #         rv = session.change_course(select_courses=[{'kcdm': course['课程代码'], 'jxbhs': [jxbh]}])
+        #         # 恢复
+        #         assert rv['选中课程'] == session.change_course(delete_courses=[course['课程代码']])['删除课程']
+        #
+        #     assert selected_courses == session.get_selected_courses()
 
     def test_get_selectable_courses(self, tmpdir, session):
         session.get_selectable_courses(filename=tmpdir.join('可选课程.json').strpath)
