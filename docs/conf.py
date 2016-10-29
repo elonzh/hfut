@@ -55,7 +55,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = hfut.__title__
-copyright = hfut.__copyright__
+copyright = hfut.__author__
 author = hfut.__author__
 
 # The version info for the project you're documenting, acts as replacement for

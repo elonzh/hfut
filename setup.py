@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from setuptools import setup, find_packages
 
 import hfut
+
 with open('README.rst', 'rb') as readme_file:
     readme = readme_file.read().decode('utf-8')
 with open('HISTORY.rst', 'rb') as history_file:
@@ -27,6 +28,9 @@ setup(
     platforms='any',
 
     install_requires=install_requires,
+    extras_require={
+        'ical': ['icalendar>=3.10']
+    },
     classifiers=[
         # How mature is this project? Common values are
         #   3 - Alpha

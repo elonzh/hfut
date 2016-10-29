@@ -11,8 +11,7 @@ env:
   - TOXENV=py27
   - TOXENV=pypy
 before_install:
-  - openssl aes-256-cbc -K $encrypted_8816a2954ab9_key -iv $encrypted_8816a2954ab9_iv
-    -in tests/test_accounts.csv.enc -out tests/test_accounts.csv -d
+  - openssl aes-256-cbc -K $encrypted_825942ad460f_key -iv $encrypted_825942ad460f_iv -in tests/test_accounts.csv.enc -out tests/test_accounts.csv -d
 install:
   - pip install -U tox
   - pip install -r requirements.txt

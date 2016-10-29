@@ -18,8 +18,8 @@ index_tpl = """
     <style>
         table{margin: 0 auto;border-collapse:collapse;}
         table, th, td{border: 1px solid;}
-        thead{bgcolor: #EFC363;}
-        tbody{bgcolor: #D6D3CE;}
+        thead{background-color: #EFC363;}
+        tbody{background-color: #D6D3CE;}
         caption{margin-bottom:0.5em;}
         .index-td{text-align:center}
     </style>
@@ -36,17 +36,16 @@ index_tpl = """
         </select>
     </caption>
     <thead>
-    <tr>
-        <th>
-        </th>
-        <th>周一</th>
-        <th>周二</th>
-        <th>周三</th>
-        <th>周四</th>
-        <th>周五</th>
-        <th>周六</th>
-        <th>周日</th>
-    </tr>
+        <tr>
+            <th></th>
+            <th>周一</th>
+            <th>周二</th>
+            <th>周三</th>
+            <th>周四</th>
+            <th>周五</th>
+            <th>周六</th>
+            <th>周日</th>
+        </tr>
     </thead>
     <tbody>
         %for i in range(11):
@@ -71,9 +70,10 @@ index_tpl = """
 </html>
 """
 app = Bottle()
-stu = hfut.StudentSession('你的学号', '密码', '校区')
-c = stu.get_my_curriculum()
-start, end = c[u'起始周'], c[u'结束周']
+session = hfut.Student('你的学号', '密码', '校区')
+curriculum = session.get_my_curriculum()
+start = curriculum[u'起始周']
+end = curriculum[u'结束周']
 filtered = [None] * (end - start + 1)
 
 
@@ -81,7 +81,7 @@ filtered = [None] * (end - start + 1)
 @app.route('/<week:int>')
 def index(week=1):
     idx = week - 1
-    filtered[idx] = filtered[idx] or hfut.util.filter_curriculum(c[u'课表'], week)
+    filtered[idx] = filtered[idx] or hfut.util.filter_curriculum(curriculum[u'课表'], week)
     return template(index_tpl, curriculum=filtered[idx], week=week, start=start, end=end)
 
 

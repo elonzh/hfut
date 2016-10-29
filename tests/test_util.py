@@ -36,8 +36,8 @@ class TestUtil(TestBase):
         with pytest.raises(ValueError):
             util.get_point('蛤蛤')
 
-    def test_cal_gpa(self, session):
-        assert isinstance(util.cal_gpa(session.get_my_achievements()), tuple)
+    def test_cal_gpa(self, shortcuts):
+        assert isinstance(util.cal_gpa(shortcuts.get_my_achievements()), tuple)
 
     def test_cal_term_code(self):
         with pytest.raises(ValueError):
@@ -67,11 +67,19 @@ class TestUtil(TestBase):
             util.rank_host_speed(['qq.com'])
         assert util.rank_host_speed(timeout=0) == []
 
-    def test_filter_curriculum(self, session):
-        c = session.get_my_curriculum()['课表']
+    def test_filter_curriculum(self, shortcuts):
+        c = shortcuts.get_my_curriculum()['课表']
         res = util.filter_curriculum(c, 2)
         assert len(res) == 7
         for v in res:
             assert len(v) == 11
         res = util.filter_curriculum(c, 2, 1)
         assert len(res) == 11
+
+    def test_schedule_and_calendar(self, shortcuts):
+        curriculum = shortcuts.get_my_curriculum()
+        from datetime import datetime
+        first_day = datetime(2016, 8, 29)
+        schedule1 = util.curriculum2schedule(curriculum['课表'], first_day)
+        schedule2 = util.curriculum2schedule(curriculum['课表'], first_day, compress=True)
+        assert len(schedule1) > len(schedule2)

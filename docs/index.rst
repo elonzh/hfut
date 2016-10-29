@@ -1,7 +1,7 @@
 hfut - 合工大教务接口文档
 ===========================================
 
-版本 v\ |version|. (:ref:`安装 <install>`)
+版本 v\ |version|.
 
 开发状态
 --------------------
@@ -30,14 +30,14 @@ QQ 群
 --------------------
 
 - 同时支持合肥校区和宣城校区的教务系统, 对应接口的使用方式完全相同
-- 支持会话自动更新, 你无需担心超过时间后访问接口会出错
-- 使用简单, 只需声明一个  ``hfut.StudentSession``  对象即可调用所有接口
+- 支持会话自动更新, 无需担心超过时间后访问接口会出错
+- 使用简单, 只需声明一个  ``hfut.Student``  对象即可调用所有接口
 - 接口丰富, 提供了所有学生能够使用的教务接口, 除此外还有众多正常情况下学生无法访问到的接口
 - 提供了强大的选课功能, 你能轻松查询可选的课程, 查看教学班级选中人数, 批量提交增删课程数据
-- 你可以快速筛选出指定周的课程[``hfut.utils.filter_curriculum``]
+- 可以灵活控制课表数据, 再也不需要各类上传个人隐私, 功能臃肿的课表软件了
 - 数据能够轻松导出, 能够为基于工大教务数据的服务或应用提供强大的底层支持
 - 对开发友好, 每个接口返回的数据结构都提供了描述, 同时提供了用于继承的基类以及页面处理的函数和其他工具提升你的开发效率
-- Python2/3 兼容, 代码在 2.7,3.3,3.4,3.5 四个版本上进行了测试
+- Python2/3 兼容, 代码在 2.7,3.3,3.4,3.5, pypy 五个版本上进行了测试
 
 
 它能做什么？
@@ -50,43 +50,43 @@ QQ 群
 - 以及一切你能想到的与学生信息与教务数据有关的项目
 
 
-用户指南
------------
+快速上手
+============
 
-这部分文档主要介绍了 hfut 的背景,然后对于 hfut 的应用做了一步一步的要点介绍.
+你只需要在命令行下输入一下代码便能安装好 hfut::
 
-.. toctree::
-    :maxdepth: 2
+    $ pip install hfut
 
-    user/intro
-    user/install
-    user/quickstart
-    user/advanced
+如果你没有安装 `pip <https://pip.pypa.io>`_ ，
+`Python 安装包指南 <http://docs.python-guide.org/en/latest/starting/installation/>`_
+能够指导你安装 PIP .
+
+.. _commonparm:
+
+通用参数说明
+--------------------
+
+参数与教务的网络请求参数基本一致
+
+- ``xqdm``: 学期代码， 形如 '027'， '027' 的字符串
+- ``kcdm``: 课程代码， 形如 '1400011B' 的字符串
+- ``zydm``: 专业代码， 形如 '0120123111' 的字符串
+- ``jxbh``: 教学班号， 形如 '0001' 的字符串
+- ``kcmc``: 课程名称关键字
+- ``jsh`` : 教师号， 形如 '12000198' 的字符串
+- ``kclx``: 课程类型， 有 'x'(选修)， 'b'(必修)， 'jh'(本专业计划)三个选项
 
 
-API 指南
---------------
-
-在这里你能看到所有接口的文档.
-
-.. toctree::
-    :maxdepth: 2
-
-    autodoc/hfut
-
-社区指南
+调用接口
 ----------
 
-这部分文档主要详细地介绍了 hfut 的社区支持情况.
+    >>> from hfut import Student
+    >>> stu = Student('your-account', 'your-password', 'campus')
+    >>> stu.get_my_info()
 
-.. toctree::
-    :maxdepth: 1
+所有的接口在这: :ref:`所有接口 <api>`.
 
-    community/faq
-    community/support
-    community/update
-    community/recommended
-    community/contributor
+:ref:`高级技巧 <advanced>` 这一节有更多的参考例子.
 
 索引
 ------------
@@ -94,3 +94,23 @@ API 指南
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. _updates:
+
+更新和发布历史
+===============================
+
+如果你想和社区以及开发版的 hfut 保持最新的联系，
+这有几种方式:
+
+GitHub
+------
+
+最好的方式是追踪 hfut 开发版本的
+`GitHub 库 <https://github.com/er1iang/hfut>`_.
+
+
+发布历史
+-------------
+
+.. include:: ../HISTORY.rst

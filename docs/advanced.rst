@@ -12,12 +12,18 @@
 使用 hfut 下载全校学生证件照
 -----------------------------------------------
 
-..  literalinclude:: ../../examples/hfut_img.py
+..  literalinclude:: ../examples/hfut_img.py
 
 在全平台使用 hfut 编写课表工具
 -----------------------------------------------
 
-..  literalinclude:: ../../examples/web_curriculum.py
+.. image:: _static/web_curriculum.png
 
+..  literalinclude:: ../examples/web_curriculum.py
 
+将课表导出为日历文件
+-----------------------------------------------
 
+.. image:: _static/calendar.png
+
+..  literalinclude:: ../examples/curriculum_calendar.py

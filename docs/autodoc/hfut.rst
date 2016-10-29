@@ -1,34 +1,79 @@
 .. _api:
+hfut package
+============
 
-hfut 的主要 API
-===================================
+Submodules
+----------
 
-hfut.model 核心接口模块
----------------------------------------------
+hfut.exception module
+---------------------
 
-.. automodule:: hfut.model
-
-
-.. autoclass:: hfut.model.BaseSession
+.. automodule:: hfut.exception
     :members:
+    :undoc-members:
+    :show-inheritance:
 
+hfut.interface module
+---------------------
 
-.. autoclass:: hfut.model.GuestSession
+.. automodule:: hfut.interface
     :members:
+    :undoc-members:
+    :show-inheritance:
 
+hfut.log module
+---------------
 
-.. autoclass:: hfut.model.StudentSession
+.. automodule:: hfut.log
     :members:
+    :undoc-members:
+    :show-inheritance:
 
-
-hfut.util 辅助函数模块
----------------------------------------------------------
-
-.. automodule:: hfut.util
-    :members:
-
-hfut.parser 页面解析模块
----------------------------------------------------------
+hfut.parser module
+------------------
 
 .. automodule:: hfut.parser
     :members:
+    :undoc-members:
+    :show-inheritance:
+
+hfut.session module
+-------------------
+
+.. automodule:: hfut.session
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hfut.shortcut module
+--------------------
+
+.. automodule:: hfut.shortcut
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hfut.util module
+----------------
+
+.. automodule:: hfut.util
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hfut.value module
+-----------------
+
+.. automodule:: hfut.value
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: hfut
+    :members:
+    :undoc-members:
+    :show-inheritance:

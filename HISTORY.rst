@@ -3,7 +3,7 @@
 
     **接口改变**
 
-    **行为改变**
+    **接口变动**
 
     **问题修复**
 
@@ -13,25 +13,34 @@
 
 .. :changelog:
 
-开发日志
----------------
-
-
-1.4.4 (2016XXXX)
+2.0.0 (2016XXXX)
 ++++++++++++++++
+
+**功能和改进**
+
+- 重构了框架的核心部分, 对原先的接口进行了解耦, 实现细节更加清晰, 现在能够控制接口请求的请求生成, 响应获取, 响应解析的过程
+- 添加了 ``parser.dict_list_2_matrix``
+- 添加了 ``util.curriculum2schedule`` 将课程表转换为上课时间表
+- 添加了将上课时间表转换为 icalendar 协议文件并导出的例子
 
 **问题修复**
 
-- 修复 ``model.StudentSession#change_course`` 旧版结果验证方法没有移除导致的问题
-- 修复 ``model.StudentSession#change_course`` 对教学班号错误的验证逻辑
+- 修复 ``shortcut.Student#change_course`` 旧版结果验证方法没有移除导致的问题
+- 修复 ``shortcut.Student#change_course`` 对教学班号错误的验证逻辑
 
-**行为改变**
+**接口变动**
 
-- ``model.StudentSession#change_course`` : 当选课教学班号错误, 删除错误的课程时将不再触发错误, 而是得到一个警告
+- 原来的 ``model`` 模块中的会话类拆分到 ``session`` , ``interface``, ``shortcut`` 三个模块, 具体改变可以阅读源码查看改动
+- 原先使用 ``model.GuestSession`` , ``model.StudentSession`` 快速调用接口现在改为使用 ``shortcut.Guest`` , ``shortcut.Student`` 即可, 接口调用方式与名字没有变化, 但是访问原先会话的属性需要从新类的 ``session`` 属性中获得
+- 删除了属性验证相关的函数, 包括 ``value.validate_attrs`` , ``session.BaseSession.validate_campus``, ``session.StudentSession.validate_account``, ``session.StudentSession.validate_password``
+- 原来会话类的 ``html_parser`` , ``site_encoding`` 迁移到了 ``value`` 模块并改为 ``HTML_PARSER`` , ``SITE_ENCODING``
+- 一些不合法的参数将不再隐式地返回结果而是直接触发错误, 涉及到 ``shortcut.Student#change_password``, ``interface.ChangePassword``, ``interface.SetTelephone``
+- ``shortcut.Student#change_course`` : 当选课教学班号错误, 删除错误的课程时将不再触发错误, 而是得到一个警告
 
 **其他杂项**
 
-- 更新 ``model.StudentSession#change_course`` 测试用例
+- 更新测试用例
+- 更新文档
 
 1.4.3 (20160829)
 ++++++++++++++++
@@ -54,10 +63,10 @@
 
 **问题修复**
 
-- 修复了 ``model.StudentSession#get_selectable_courses`` 由于之前版本返回值的行为改变造成的错误
-- 修复了 ``model.StudentSession#change_course`` 由于之前版本返回值的行为改变造成的错误
+- 修复了 ``model.StudentSession#get_selectable_courses`` 由于之前版本返回值的接口变动造成的错误
+- 修复了 ``model.StudentSession#change_course`` 由于之前版本返回值的接口变动造成的错误
 
-**行为改变**
+**接口变动**
 
 - ``model.GuestSession#get_system_state`` -> ``model.GuestSession#get_system_status`` (拼写错误这么久竟然没发现= =)
 - 去除了 ``log.unstable``
@@ -65,7 +74,7 @@
 1.4.1 (20160812)
 ++++++++++++++++
 
-**行为改变**
+**接口变动**
 
 - 将当接口没有解析出结果时返回的 None 值改为相应的空的容器
 
@@ -77,7 +86,7 @@
 
 1.4.0 (20160812)
 ++++++++++++++++
-**行为改变**
+**接口变动**
 
 - 包名由 ``hfut_stu_lib`` 改为 ``hfut``
 - 删除了 ``APIResult`` , 使用 ``model.BaseSession.histories`` (默认最大长度为10的双端队列)储存历史响应
@@ -108,7 +117,7 @@
 - 重新实现了类的属性验证方式, ``hfut.value.validate_attrs``
 - 添加了对 `model.StudentSession.account`, `hfut.model.BaseSession.campus` 的验证
 
-**行为改变**
+**接口变动**
 
 - ``exception`` 中的 `WrongPasswordPattern` 改为了 `ValidationError`
 
@@ -126,7 +135,7 @@
 - 修复 ``model.GuestSession.get_teaching_plan`` 查询公选课时教务系统返回大量重复课程的错误
 - 修复 ``model.GuestSession.search_course`` 结果数据格式化不完整
 
-**行为改变**
+**接口变动**
 
 - ``model.GuestSession.get_teaching_plan` 查询公选课时不再需要 `zydm`` 参数
 - 删除了所有返回结果中含有的 `序号` 字段
@@ -144,7 +153,7 @@
 - ``util.rank_host_speed`` 对写操作加锁避免竞争冒险
 - ``model.StudentSession.get_selectable_courses`` 使用了多线程进行优化
 
-**行为改变**
+**接口变动**
 
 - 去掉了 ``model.StudentSession.change_password` 多余的 `oldpwd`,`new2pwd`` 参数, 合肥校区修改教务密码无意义, 因此不允许调用此接口
 - ``model.StudentSession.login_session`` 改为 ``model.StudentSession.login`` 并且不再有返回值, 同时也修复了上个版本需要主动调用的问题
@@ -163,7 +172,7 @@
 - ``model.StudentSession`` 初始化成功后会从 cookie 中提取出姓名
 - 登录失败时将会触发新增的 ``exception.SystemLoginFailed``, IP被封会触发 ``exception.IPBanned``
 
-**行为改变**
+**接口变动**
 
 - ``model.StudentSession`` 实例化后不会自动登录，需要主动调用 ``model.StudentSession.login_session`` 登录, 这样可以在登陆前对实例进行其他初始化，例如配置代理等
 
@@ -237,7 +246,7 @@
 - ``log.unfinished`` 装饰器被移除
 - ``parser.parse_tr_strs`` 不再接受单个的 ``Tag`` 对象作为参数, 同时现在 ``td`` 下有子标签也会解析结果, 不再报 ``ValueError``
 
-**行为改变**
+**接口变动**
 
 - ``__init__`` 中的变量, 迁移到了 ``values``
 
@@ -330,7 +339,7 @@
     - ``is_lesson_selected`` -> ``check_courses``
     - ``get_lessons_can_be_selected`` -> ``get_selectable_courses``
 
-**行为改变**
+**接口变动**
 
 - 现在登录也看作是一个接口,进行了重构
 - 现在所有的接口返回的都是 ``model.APIResult`` 对象

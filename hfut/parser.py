@@ -70,13 +70,35 @@ def dict_list_2_tuple_set(dict_list_or_tuple_set, reverse=False):
         >>> dict_list_2_tuple_set({(('c', 3), ('d', 4)), (('a', 1), ('b', 2))}, reverse=True)
         [{'a': 1, 'b': 2}, {'c': 3, 'd': 4}]
 
-    :param dict_list_or_tuple_set:
-    :param reverse:
-    :return:
+    :param dict_list_or_tuple_set: 如果 ``reverse=False`` 为字典列表, 否则为元组集合
+    :param reverse: 是否反向转换
     """
     if reverse:
         return [dict(l) for l in dict_list_or_tuple_set]
     return {tuple(six.iteritems(d)) for d in dict_list_or_tuple_set}
+
+
+def dict_list_2_matrix(dict_list, columns):
+    """
+        >>> dict_list_2_matrix([{'a': 1, 'b': 2}, {'a': 3, 'b': 4}], ('a', 'b'))
+        [[1, 2], [3, 4]]
+
+    :param dict_list: 字典列表
+    :param columns: 字典的键
+    """
+    k = len(columns)
+    n = len(dict_list)
+
+    result = [[None] * k for i in range(n)]
+    for i in range(n):
+        row = dict_list[i]
+        for j in range(k):
+            col = columns[j]
+            if col in row:
+                result[i][j] = row[col]
+            else:
+                result[i][j] = None
+    return result
 
 
 def parse_course(course_str):

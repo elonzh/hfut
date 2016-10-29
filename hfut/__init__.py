@@ -4,16 +4,15 @@
 """
 from __future__ import unicode_literals
 
+from . import util, parser
+from .exception import *
+from .log import *
+from .shortcut import *
+from .value import *
+
 __title__ = 'hfut'
-__version__ = '1.4.3'
+__version__ = '2.0.0'
 __author__ = 'erliang'
 __author_email__ = 'dev@erliang.me'
 __url__ = 'https://github.com/er1iang/hfut'
 __license__ = 'MIT'
-__copyright__ = 'Copyright 2015-2016 erliang'
-
-from . import util, parser
-from .log import *
-from .model import *
-from .value import *
-from .exception import *

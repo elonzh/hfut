@@ -9,17 +9,17 @@ import os
 
 import pytest
 
-from hfut import StudentSession
+from hfut import Student
 
 base_dir = os.path.dirname(__file__)
 
 
-def load_sessions():
+def load_shortcuts():
     with open(os.path.join(base_dir, 'test_accounts.csv')) as fp:
-        sessions = [StudentSession(account, password, campus) for account, password, campus in csv.reader(fp)]
-    return sessions
+        shortcuts = [Student(account, password, campus) for account, password, campus in csv.reader(fp)]
+    return shortcuts
 
 
-@pytest.fixture(params=load_sessions())
-def session(request):
+@pytest.fixture(params=load_shortcuts())
+def shortcuts(request):
     return request.param

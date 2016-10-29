@@ -12,7 +12,7 @@ import threading
 import requests
 import six
 
-from hfut import GuestSession, XC, HF
+from hfut import Guest, XC, HF
 from hfut.util import cal_term_code
 
 # 文件保存路径
@@ -43,7 +43,7 @@ logger.addHandler(fh)
 logger.setLevel(logging.INFO)
 
 # 初始化 session
-session = GuestSession(campus)
+shortcuts = Guest(campus)
 
 
 # 初始化文件夹
@@ -67,12 +67,12 @@ def fetch_img(term_code):
     error_sum = 0
     exist_sum = 0
     # 获取该学期的所有教学班
-    klass = session.search_course(term_code, COURSE_CODE)
+    klass = shortcuts.search_course(term_code, COURSE_CODE)
     if klass:
         logger.info('{} 学期共有 {} 个教学班'.format(term_code, len(klass)))
         for k in klass:
             # 获取教学班学生
-            class_stus = session.get_class_students(term_code, COURSE_CODE, k['教学班号'])
+            class_stus = shortcuts.get_class_students(term_code, COURSE_CODE, k['教学班号'])
             if class_stus is None:
                 logger.critical('没有获取到 {} 学期的教学班'.format(term_code))
                 sys.exit(0)
@@ -80,7 +80,7 @@ def fetch_img(term_code):
             logger.info('{} 班共有 {} 名学生'.format(class_stus['班级名称'], stu_num))
             stu_sum += stu_num
             for stu in class_stus['学生']:
-                img_url = six.moves.urllib.parse.urljoin(session.host, ''.join(
+                img_url = six.moves.urllib.parse.urljoin(shortcuts.session.host, ''.join(
                     ['student/photo/', stu['学号'][:4], '/', stu['学号'], file_suffix]))
                 sex = '男'
                 stu_name = stu['姓名']

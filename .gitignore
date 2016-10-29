@@ -128,3 +128,5 @@ examples/img
 /test_accounts.csv
 /debug.ipynb
 /tests/test_accounts.csv
+/.vscode/
+/debug.py
