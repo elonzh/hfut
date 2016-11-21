@@ -120,7 +120,6 @@ class GetClassStudents(BaseInterface):
         if term and class_name:
             term = term.group()
             class_name = ''.join(class_name.groups())
-            print(class_name, class_name.encode('utf-8'))
             # stus = [{'序号': int(v[0]), '学号': int(v[1]), '姓名': v[2]} for v in stus]
             stus = [{'学号': int(v[1]), '姓名': v[2]} for v in stus]
             return {'学期': term, '班级名称': class_name, '学生': stus}
