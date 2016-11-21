@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import random
+import time
 
 import pytest
 
@@ -125,6 +126,9 @@ class TestStudent(TestBase):
             with pytest.raises(ValueError):
                 # 新密码与原密码相同
                 shortcuts.change_password(password)
+
+            # 由于 travis 测试是并行的, 等待随机的一小段时间减小发生竞争导致错误的几率
+            time.sleep(random.random())
             # 新密码与原密码不同
             assert shortcuts.change_password('123456') is True
             assert shortcuts.session.password == '123456'
