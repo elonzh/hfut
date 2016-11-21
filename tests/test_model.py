@@ -9,6 +9,7 @@ from hfut import HF, XC
 from . import TestBase
 
 
+@pytest.mark.usefixtures('features')
 class TestGuest(TestBase):
     def test_get_class_students(self, shortcuts):
         keys = ['学期', '班级名称', '学生']
@@ -18,16 +19,18 @@ class TestGuest(TestBase):
         res = shortcuts.get_class_students('025', kcdm, jxbh)
         assert res == {}
         res = shortcuts.get_class_students('026', kcdm, jxbh)
+        assert res['班级名称'] == '电子电路课程设计A0001班'
+        assert res['学期'] == '2014-2015学年第二学期'
         self.assert_dict_keys(res, keys)
         if shortcuts.session.campus == HF:
             assert len(res['学生']) == 40
         else:
             assert len(res['学生']) == 45
 
-        # 大学语文  0001班
-        shortcuts.get_class_students('022', '5202012B', '0001')
-        # 大学英语拓展（一）0001班
-        shortcuts.get_class_students('029', '9900039X', '0001')
+        res = shortcuts.get_class_students('022', '5202012B', '0001')
+        assert res['班级名称'] == '大学语文0001班'  # 页面中是 "大学语文  0001班" , 去掉了中间的空白
+        res = shortcuts.get_class_students('029', '9900039X', '0001')
+        assert res['班级名称'] == '大学英语拓展（一）0001班'
 
     def test_get_class_info(self, shortcuts):
         keys = ['时间地点', '开课单位', '禁选范围', '考核类型', '性别限制', '教学班号', '课程名称', '优选范围', '备注',
@@ -76,6 +79,7 @@ class TestGuest(TestBase):
         assert res['起始周'] == res['结束周'] == 0
 
 
+@pytest.mark.usefixtures('features')
 class TestStudent(TestBase):
     def test_is_expired(self, shortcuts):
         assert shortcuts.session.is_expired is False

@@ -13,7 +13,33 @@
 
 .. :changelog:
 
-2.0.0 (2016XXXX)
+2.1.0 (20161121)
+++++++++++++++++
+
+**功能和改进**
+
+- 添加了 ``parser.GlobalFeaturedSoup`` , 能够通过配置 ``value.ENV['SOUP_FEATURES']`` 属性来全局配置解析器, 目前在 ``html.parser`` 与 ``lxml`` 下进行了测试
+- 添加了 ``log.report_response`` 用来生成响应报告
+- 添加了 ``shortcut.BaseShortcuts.request`` ,  用来分离接口的请求与解析
+- 有关请求的日志记录以及会话类更加友好
+
+**问题修复**
+
+- 修复 Python2 中对 Unicode 匹配不完整的问题
+
+**接口变动**
+
+- 原先使用 ``bs4.BeautifulSoup`` 解析的接口统一改为 ``parser.GlobalFeaturedSoup`` 子类
+- ``HTML_PARSER`` 重命名为 ``SOUP_FEATURES``
+- ``value`` 模块中的值全部添加到 ENV 字典中使其可变动
+- ``interface.GetClassStudents`` 不再因未匹配到班级名称或学期报错
+- ``util.rank_host_speed`` 重构为 ``util.sort_hosts`` ,  不再接受主机 ip 参数, 改为主机 地址参数,  同时不再删除错误请求地址,  而是统一将返回时间设为 INFINITY(10000000ms)
+
+**其他杂项**
+
+- 添加了使用 ``lxml`` 作为解析器的测试, 完善了其他一些测试细节
+
+2.0.0 (20161029)
 ++++++++++++++++
 
 **功能和改进**

@@ -53,19 +53,18 @@ class TestUtil(TestBase):
             assert util.term_str2code('第二学期')
 
     def test_get_host_speed_rank(self):
-        r = util.rank_host_speed([
-            '172.18.6.93',
-            '172.18.6.94',
-            '172.18.6.95',
-            '172.18.6.96',
-            '172.18.6.97',
-            '172.18.6.98',
-            '172.18.6.99'
+        r = util.sort_hosts([
+            'http://172.18.6.93/',
+            'http://172.18.6.94/',
+            'http://172.18.6.95/',
+            'http://172.18.6.96/',
+            'http://172.18.6.97/',
+            'http://172.18.6.98/',
+            'http://172.18.6.99/'
         ])
-        assert len(r) <= 1
-        with pytest.raises(ValueError):
-            util.rank_host_speed(['qq.com'])
-        assert util.rank_host_speed(timeout=0) == []
+        assert len(r) == 7
+        assert util.sort_hosts(['http://qq.com'])[0][0] == 10000000
+        assert util.sort_hosts(timeout=0)[0][0] == 10000000
 
     def test_filter_curriculum(self, shortcuts):
         c = shortcuts.get_my_curriculum()['课表']

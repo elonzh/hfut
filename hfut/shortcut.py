@@ -20,11 +20,15 @@ __all__ = ['BaseShortcuts', 'Guest', 'Student']
 class BaseShortcuts(object):
     session = NotImplemented
 
-    def query(self, interface):
+    def request(self, interface):
         kwargs = deepcopy(interface.request_kwargs)
         kwargs.update(interface.send_kwargs)
         kwargs.update(interface.extra_kwargs)
         response = self.session.request(**kwargs)
+        return response
+
+    def query(self, interface):
+        response = self.request(interface)
         return interface.parse(response)
 
 

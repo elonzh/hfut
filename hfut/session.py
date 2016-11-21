@@ -9,9 +9,11 @@ from collections import deque
 
 import requests
 import six
+from six.moves import urllib
 
 from .exception import SystemLoginFailed, IPBanned
-from .value import HF, HOSTS, SITE_ENCODING
+from .log import logger, report_response
+from .value import HF, ENV
 
 __all__ = ['BaseSession', 'GuestSession', 'StudentSession']
 
@@ -39,13 +41,13 @@ class BaseSession(requests.Session):
 
         # 初始化时根据合肥选择不同的地址
         self.campus = campus.upper()
-        self.host = HOSTS[self.campus]
+        self.host = ENV[self.campus]
 
     def prepare_request(self, request):
         # requests 在准备 url 进行解析, 因此只能在准备前将 url 换成完整的地址
         # requests.models.PreparedRequest#prepare_url
-        if not six.moves.urllib.parse.urlparse(request.url).netloc:
-            request.url = six.moves.urllib.parse.urljoin(self.host, request.url)
+        if not urllib.parse.urlparse(request.url).netloc:
+            request.url = urllib.parse.urljoin(self.host, request.url)
         return super(BaseSession, self).prepare_request(request)
 
     def send(self, request, **kwargs):
@@ -53,13 +55,21 @@ class BaseSession(requests.Session):
         所有接口用来发送请求的方法, 只是 :meth:`requests.sessions.Session.send` 的一个钩子方法, 用来处理请求前后的工作
         """
         response = super(BaseSession, self).send(request, **kwargs)
-        response.encoding = SITE_ENCODING
+        response.encoding = ENV['SITE_ENCODING']
         self.histories.append(response)
+        logger.debug(report_response(response, redirection=kwargs.get('allow_redirects')))
         return response
 
+    def __str__(self):
+        return '<BaseSession(%s)>' % self.campus
 
+
+@six.python_2_unicode_compatible
 class GuestSession(BaseSession):
     pass
+
+    def __str__(self):
+        return '<GuestSession(%s)>' % self.campus
 
 
 @six.python_2_unicode_compatible
@@ -89,7 +99,7 @@ class StudentSession(BaseSession):
         return super(StudentSession, self).request(*args, **kwargs)
 
     def __str__(self):
-        return '<StudentSession:{account}>'.format(account=self.account)
+        return '<StudentSession(%s, %s)>' % (self.account, self.campus)
 
     @property
     def is_expired(self):
@@ -136,7 +146,7 @@ class StudentSession(BaseSession):
         escaped_name = self.cookies.get('xsxm')
         # https://pythonhosted.org/six/#module-six.moves.urllib.parse
         if six.PY3:
-            self.name = six.moves.urllib.parse.unquote(escaped_name, SITE_ENCODING)
+            self.name = urllib.parse.unquote(escaped_name, ENV['SITE_ENCODING'])
         else:
-            name = six.moves.urllib.parse.unquote(escaped_name)
-            self.name = name.decode(SITE_ENCODING)
+            name = urllib.parse.unquote(escaped_name)
+            self.name = name.decode(ENV['SITE_ENCODING'])

@@ -8,8 +8,33 @@ import re
 from pprint import pformat
 
 import six
+from bs4 import BeautifulSoup
 
 from .log import logger
+from .value import ENV
+
+__all__ = [
+    'GlobalFeaturedSoup',
+    'safe_zip',
+    'parse_tr_strs',
+    'flatten_list',
+    'dict_list_2_tuple_set',
+    'dict_list_2_matrix',
+    'parse_course'
+]
+
+
+class GlobalFeaturedSoup(BeautifulSoup):
+    def __init__(self, markup="", parse_only=None, from_encoding=None, exclude_encodings=None, **kwargs):
+        logger.debug('Using SOUP_FEATURES: %s', ENV['SOUP_FEATURES'])
+        super(GlobalFeaturedSoup, self).__init__(
+            markup=markup,
+            features=ENV['SOUP_FEATURES'],  # https://www.crummy.com/software/BeautifulSoup/bs4/doc.zh/#id9
+            parse_only=parse_only,
+            from_encoding=from_encoding,
+            exclude_encodings=exclude_encodings,
+            **kwargs
+        )
 
 
 def safe_zip(iter1, iter2, iter1_len=None, iter2_len=None):

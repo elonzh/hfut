@@ -1,3 +1,4 @@
+lxml
 tox
 pytest
 pytest-cov

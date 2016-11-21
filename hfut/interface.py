@@ -6,13 +6,13 @@ import time
 from copy import deepcopy
 
 import six
-from bs4 import BeautifulSoup, SoupStrainer
+from bs4 import SoupStrainer
 from requests import Request
 
 from .log import logger, log_result_not_found
-from .parser import parse_tr_strs, flatten_list, parse_course, safe_zip
+from .parser import GlobalFeaturedSoup, parse_tr_strs, flatten_list, parse_course, safe_zip
 from .session import BaseSession, StudentSession
-from .value import HTML_PARSER, SITE_ENCODING, TERM_PATTERN, XC_PASSWORD_PATTERN
+from .value import ENV
 
 __all__ = [
     'BaseInterface', 'GetSystemStatus', 'GetClassStudents', 'GetClassInfo', 'SearchCourse', 'GetTeachingPlan',
@@ -58,9 +58,9 @@ class GetSystemStatus(BaseInterface):
     def parse(self, response):
         # 学期后有一个 </br> 便签, html.parser 会私自的将它替换为 </table> 导致无获取后面的 html
         # ss = SoupStrainer('table', height='85%')
-        bs = BeautifulSoup(response.text, HTML_PARSER)
+        bs = GlobalFeaturedSoup(response.text)
         text = bs.get_text(strip=True)
-        term = TERM_PATTERN.search(text).group()
+        term = ENV['TERM_PATTERN'].search(text).group()
         plan_pattern = re.compile(
             r'第(\d)轮:'
             r'(\d{4}-\d{1,2}-\d{1,2}\s+\d{1,2}:\d{1,2}:\d{1,2})'
@@ -109,25 +109,24 @@ class GetClassStudents(BaseInterface):
     def parse(self, response):
         page = response.text
         # 狗日的网页代码写错了无法正确解析标签!
-        term = TERM_PATTERN.search(page)
+        term = ENV['TERM_PATTERN'].search(page)
         # 大学英语拓展（一）0001班
         # 大学语文    0001班
-        class_name_p = r'\S+\s*\d{4}班'
-        class_name = re.search(class_name_p, page)
+        class_name_p = r'(?<=>)(\S+)\s*(\d{4}班)'
+        class_name = re.search(class_name_p, page, flags=re.UNICODE)
         # 虽然 \S 能解决匹配失败中文的问题, 但是最后的结果还是乱码的
         stu_p = r'>\s*?(\d{1,3})\s*?</.*?>\s*?(\d{10})\s*?</.*?>\s*?([\u4e00-\u9fa5*]+)\s*?</'
-        stus = re.findall(stu_p, page, re.DOTALL)
+        stus = re.findall(stu_p, page, flags=re.DOTALL | re.UNICODE)
         if term and class_name:
+            term = term.group()
+            class_name = ''.join(class_name.groups())
+            print(class_name, class_name.encode('utf-8'))
             # stus = [{'序号': int(v[0]), '学号': int(v[1]), '姓名': v[2]} for v in stus]
             stus = [{'学号': int(v[1]), '姓名': v[2]} for v in stus]
-            return {'学期': term.group(), '班级名称': class_name.group(), '学生': stus}
-        elif page.find('无此教学班') != -1:
-            log_result_not_found(page)
-            return {}
+            return {'学期': term, '班级名称': class_name, '学生': stus}
         else:
-            msg = '\n'.join(['没有匹配到信息, 可能出现了一些问题', page])
-            logger.error(msg)
-            raise ValueError(msg)
+            log_result_not_found(response)
+            return {}
 
 
 class GetClassInfo(BaseInterface):
@@ -147,11 +146,11 @@ class GetClassInfo(BaseInterface):
     def parse(self, response):
         page = response.text
         ss = SoupStrainer('table', width='600')
-        bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
+        bs = GlobalFeaturedSoup(page, parse_only=ss)
         # 有三行 , 教学班号	课程名称	课程类型	学分  开课单位	校区	起止周	考核类型  性别限制	选中人数
         key_list = [list(tr.stripped_strings) for tr in bs.find_all('tr', bgcolor='#B4B9B9')]
         if len(key_list) != 3:
-            log_result_not_found(page)
+            log_result_not_found(response)
             return {}
         # 有7行, 前三行与 key_list 对应, 后四行是单行属性, 键与值在同一行
         trs = bs.find_all('tr', bgcolor='#D6D3CE')
@@ -166,9 +165,21 @@ class GetClassInfo(BaseInterface):
         class_info = dict(safe_zip(keys, values, 10, 12))
         class_info['学分'] = float(class_info['学分'])
         class_info['选中人数'] = int(class_info['选中人数'])
-        # 后四行
+        # 后四行, 每个元素有值长度为2, 否则为1
+        # html.parser [
+        # ['优选范围', '电子信息13-1班'],
+        # ['时间地点', '禁选范围', '备 注', '第20周课程设计，另一周分散进行'],
+        # ['禁选范围'],
+        # ['备 注', '第20周课程设计，另一周分散进行']]
+        # lxml [
+        # ['优选范围', '电子信息13-1班'],
+        # ['时间地点'],
+        # ['禁选范围'],
+        # ['备 注', '第20周课程设计，另一周分散进行']]
         last_4_lines = [list(tr.stripped_strings) for tr in trs[3:7]]
-        last_4_lines[1] = last_4_lines[1][:-(len(last_4_lines[2]) + len(last_4_lines[3]))]
+        # 兼容 html.parser 与 lxml
+        if len(last_4_lines[1]) > 2:
+            last_4_lines[1] = last_4_lines[1][:- len(last_4_lines[2]) - len(last_4_lines[3])]
         for kv in last_4_lines:
             k = kv[0]
             v = None if len(kv) == 1 else kv[1]
@@ -190,13 +201,13 @@ class SearchCourse(BaseInterface):
         self.extra_kwargs['data'] = {
             'xqdm': xqdm,
             'kcdm': kcdm.upper() if kcdm else None,
-            'kcmc': kcmc.encode(SITE_ENCODING) if kcmc else None
+            'kcmc': kcmc.encode(ENV['SITE_ENCODING']) if kcmc else None
         }
 
     def parse(self, response):
         page = response.text
         ss = SoupStrainer('table', width='650')
-        bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
+        bs = GlobalFeaturedSoup(page, parse_only=ss)
         title = bs.find('tr', bgcolor='#FB9E04')
         trs = bs.find_all('tr', bgcolor=re.compile(r'#D6D3CE|#B4B9B9'))
 
@@ -212,7 +223,7 @@ class SearchCourse(BaseInterface):
                 courses.append(course)
             return courses
         else:
-            log_result_not_found(page)
+            log_result_not_found(response)
             return []
 
 
@@ -236,11 +247,11 @@ class GetTeachingPlan(BaseInterface):
     def parse(self, response):
         page = response.text
         ss = SoupStrainer('table', width='650')
-        bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
+        bs = GlobalFeaturedSoup(page, parse_only=ss)
         trs = bs.find_all('tr')
         keys = tuple(trs[1].stripped_strings)
         if len(keys) != 6:
-            log_result_not_found(page)
+            log_result_not_found(response)
             return []
 
         value_list = parse_tr_strs(trs[2:])
@@ -272,9 +283,9 @@ class GetTeacherInfo(BaseInterface):
     def parse(self, response):
         page = response.text
         ss = SoupStrainer('table')
-        bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
+        bs = GlobalFeaturedSoup(page, parse_only=ss)
         if not bs.text:
-            log_result_not_found(page)
+            log_result_not_found(response)
             return {}
         value_list = parse_tr_strs(bs.find_all('tr'))
         # 第一行最后有个照片项
@@ -306,10 +317,10 @@ class GetCourseClasses(BaseInterface):
     def parse(self, response):
         page = response.text
         ss = SoupStrainer('body')
-        bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
+        bs = GlobalFeaturedSoup(page, parse_only=ss)
         class_table = bs.select_one('#JXBTable')
         if class_table.get_text(strip=True) == '对不起！该课程没有可被选的教学班。':
-            log_result_not_found(page)
+            log_result_not_found(response)
             return {}
 
         result = dict()
@@ -323,7 +334,7 @@ class GetCourseClasses(BaseInterface):
             assert len(tds) == 5
 
             # 解析隐含在 alt 属性中的信息
-            class_info_table = BeautifulSoup(tds[1]['alt'], HTML_PARSER)
+            class_info_table = GlobalFeaturedSoup(tds[1]['alt'])
             info_trs = class_info_table.select('tr')
             # 校区 起止周 考核类型 禁选专业
             cls_info = dict(safe_zip(info_trs[0].stripped_strings, parse_tr_strs([info_trs[1]])[0]))
@@ -365,7 +376,7 @@ class GetEntireCurriculum(BaseInterface):
     def parse(self, response):
         page = response.text
         ss = SoupStrainer('table', width='840')
-        bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
+        bs = GlobalFeaturedSoup(page, parse_only=ss)
         trs = bs.find_all('tr')
         origin_list = parse_tr_strs(trs[1:])
 
@@ -401,7 +412,7 @@ class GetCode(BaseInterface):
     def parse(self, response):
         page = response.text
         ss = SoupStrainer('select')
-        bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
+        bs = GlobalFeaturedSoup(page, parse_only=ss)
         xqdm_options = bs.find('select', attrs={'name': 'xqdm'}).find_all('option')
         xqdm = [{'学期代码': node['value'], '学期名称': node.string.strip()} for node in xqdm_options]
         ccjbyxzy_options = bs.find('select', attrs={'name': 'ccjbyxzy'}).find_all('option')
@@ -420,7 +431,7 @@ class GetMyInfo(BaseInterface):
     def parse(self, response):
         page = response.text
         ss = SoupStrainer('table')
-        bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
+        bs = GlobalFeaturedSoup(page, parse_only=ss)
 
         key_trs = bs.find_all('tr', height='16', bgcolor='#A0AAB4')
         key_lines = parse_tr_strs(key_trs)
@@ -462,7 +473,7 @@ class GetMyAchievements(BaseInterface):
     def parse(self, response):
         page = response.text
         ss = SoupStrainer('table', width='582')
-        bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
+        bs = GlobalFeaturedSoup(page, parse_only=ss)
         trs = bs.find_all('tr')
         keys = tuple(trs[0].stripped_strings)
         # 不包括表头行和表底学分统计行
@@ -486,7 +497,7 @@ class GetMyCurriculum(BaseInterface):
     def parse(self, response):
         page = response.text
         ss = SoupStrainer('table', width='840')
-        bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
+        bs = GlobalFeaturedSoup(page, parse_only=ss)
         trs = bs.find_all('tr')
         origin_list = parse_tr_strs(trs[1:])
 
@@ -522,7 +533,7 @@ class GetMyFees(BaseInterface):
     def parse(self, response):
         page = response.text
         ss = SoupStrainer('table', bgcolor='#000000')
-        bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
+        bs = GlobalFeaturedSoup(page, parse_only=ss)
 
         keys = tuple(bs.table.thead.tr.stripped_strings)
         value_trs = bs.find_all('tr', bgcolor='#D6D3CE')
@@ -546,7 +557,7 @@ class ChangePassword(BaseInterface):
 
     def __init__(self, password, new_password):
         # 若不满足密码修改条件便不做请求
-        if not XC_PASSWORD_PATTERN.match(new_password):
+        if not ENV['XC_PASSWORD_PATTERN'].match(new_password):
             raise ValueError('密码为6-12位小写字母或数字')
 
         self.extra_kwargs['data'] = {
@@ -559,7 +570,7 @@ class ChangePassword(BaseInterface):
     def parse(self, response):
         page = response.text
         ss = SoupStrainer('table', width='580', border='0', cellspacing='1', bgcolor='#000000')
-        bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
+        bs = GlobalFeaturedSoup(page, parse_only=ss)
         res = bs.text.strip()
         if res == '密码修改成功！':
             return True
@@ -586,7 +597,7 @@ class SetTelephone(BaseInterface):
     def parse(self, response):
         page = response.text
         ss = SoupStrainer('input', attrs={'name': 'tel'})
-        bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
+        bs = GlobalFeaturedSoup(page, parse_only=ss)
         return bs.input['value'] == self.extra_kwargs['data']['tel']
 
 
@@ -600,7 +611,7 @@ class GetUnfinishedEvaluation(BaseInterface):
     def parse(self, response):
         page = response.text
         ss = SoupStrainer('table', width='600', bgcolor='#000000')
-        bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
+        bs = GlobalFeaturedSoup(page, parse_only=ss)
         forms = bs.find_all('form')
         result = []
         for form in forms:
@@ -672,7 +683,7 @@ class GetOptionalCourses(BaseInterface):
     def parse(self, response):
         page = response.text
         ss = SoupStrainer('table', id='KCTable')
-        bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
+        bs = GlobalFeaturedSoup(page, parse_only=ss)
         courses = []
         trs = bs.find_all('tr')
         value_list = [tuple(tr.stripped_strings) for tr in trs]
@@ -699,7 +710,7 @@ class GetSelectedCourses(BaseInterface):
     def parse(self, response):
         page = response.text
         ss = SoupStrainer('table', id='TableXKJG')
-        bs = BeautifulSoup(page, HTML_PARSER, parse_only=ss)
+        bs = GlobalFeaturedSoup(page, parse_only=ss)
 
         courses = []
         keys = tuple(bs.find('tr', bgcolor='#296DBD').stripped_strings)
@@ -737,10 +748,13 @@ class ChangeCourse(BaseInterface):
             page = response.text
             # 当选择同意课程的多个教学班时, 若已选中某个教学班, 再选择其他班数据库会出错,
             # 其他一些不可预料的原因也会导致数据库出错
-            p = re.compile(r'(成功提交选课数据|容量已满,请选择其他教学班|已成功删除下列选课数据).*?'
-                           r'课程代码：.*?([\dbBxX]{8}).*?'
-                           r'教学班号：.*?(\d{4})')
-            text = BeautifulSoup(page, HTML_PARSER).get_text(strip=True)
+            p = re.compile(
+                r'(成功提交选课数据|容量已满,请选择其他教学班|已成功删除下列选课数据).*?'
+                r'课程代码：.*?([\dbBxX]{8}).*?'
+                r'教学班号：.*?(\d{4})',
+                flags=re.UNICODE
+            )
+            text = GlobalFeaturedSoup(page).get_text(strip=True)
             r = p.findall(text)
             if r:
                 msg_results = []
@@ -752,7 +766,7 @@ class ChangeCourse(BaseInterface):
                 # todo: 待充分测试
                 return msg_results
             else:
-                log_result_not_found(page)
+                log_result_not_found(response)
                 # 通过已选课程前后对比确定课程修改结果
                 # before_change = dict_list_2_tuple_set(self.selected_courses)
                 # after_change = dict_list_2_tuple_set(GetSelectedCourses().query())

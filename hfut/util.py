@@ -10,12 +10,12 @@ from threading import Thread
 
 import requests
 import requests.exceptions
-import six
+from six.moves import urllib
 
 from .log import logger
-from .value import TERM_PATTERN
+from .value import ENV
 
-__all__ = ['get_point', 'cal_gpa', 'cal_term_code', 'term_str2code', 'rank_host_speed', 'filter_curriculum']
+__all__ = ['get_point', 'cal_gpa', 'cal_term_code', 'term_str2code', 'sort_hosts', 'filter_curriculum']
 
 
 def get_point(grade_str):
@@ -120,61 +120,48 @@ def term_str2code(term_str):
     :param term_str: 形如 "2012-2013学年第二学期" 的学期字符串
     :return: 形如 "022" 的学期代码
     """
-    result = TERM_PATTERN.match(term_str).groups()
+    result = ENV['TERM_PATTERN'].match(term_str).groups()
     year = int(result[0])
     return cal_term_code(year, result[1] == '一')
 
 
-def rank_host_speed(exclude=None, timeout=(5, 10)):
+def sort_hosts(hosts=None, timeout=(5, 10)):
     """
-    在宣城校区内网下测试各个内网地址的速度并返回排名
+    在宣城校区内网下测试各个内网地址的速度并返回排名, 当出现错误时消耗时间为 INFINITY = 10000000
 
-    :param exclude: 不进行计算的 IP 地址列表, 可以是 `http://222.195.8.201` 或者 `222.195.8.201` 的形式
+    :param hosts: 进行计算的主机地址列表, 如 `['http://222.195.8.201/']`, 如果不填则测试自带的列表
     :param timeout: 超时时间, 可以是一个浮点数或 形如 ``(连接超时, 读取超时)`` 的元祖
-    :return: 形如 ``[(地址, 速度)]`` 的排名数据
+    :return: 形如 ``[(访问耗时, 地址)]`` 的排名数据
     """
-    exclude = exclude or []
-    hosts = [
-        '222.195.8.201',
-        '172.18.6.93',
-        '172.18.6.94',
-        '172.18.6.95',
-        '172.18.6.96',
-        '172.18.6.97',
-        '172.18.6.98',
-        '172.18.6.99'
+    hosts = hosts or [
+        'http://222.195.8.201/',
+        'http://172.18.6.93/',
+        'http://172.18.6.94/',
+        'http://172.18.6.95/',
+        'http://172.18.6.96/',
+        'http://172.18.6.97/',
+        'http://172.18.6.98/',
+        'http://172.18.6.99/'
     ]
 
-    for addr in exclude:
-        p = six.moves.urllib.parse.urlparse(addr)
-        h = p.netloc or p.path
-        hosts.remove(h)
-        logger.debug('[%s] 被排除', h)
-
-    available_hosts = []
+    ranks = []
 
     class HostCheckerThread(Thread):
         def __init__(self, host):
             super(HostCheckerThread, self).__init__()
-            self.host = six.moves.urllib.parse.SplitResult('http', host, '', '', '').geturl()
+            self.host = host
 
         def run(self):
+            INFINITY = 10000000
             try:
-                res = requests.head(self.host, timeout=timeout)
-            except requests.exceptions.ConnectionError:
-                # 连接失败
-                logger.error('[%s] 连接超时!', self.host)
-            except requests.exceptions.ReadTimeout:
-                # 连接超时
-                logger.error('[%s] 读取超时!', self.host)
-            except requests.HTTPError:
-                # 服务器出错
-                logger.error('[%s] 连接失败!', self.host)
-            else:
-                cost = res.elapsed.total_seconds() * 1000
-                # http://stackoverflow.com/questions/6319207/are-lists-thread-safe
-                available_hosts.append((cost, self.host))
-                logger.info('[%s] 请求成功,耗时 %.0f ms', self.host, cost)
+                # 访问一个数据库查询较多的页面
+                res = requests.get(urllib.parse.urljoin(self.host, 'teacher/asp/Jskb_table.asp'), timeout=timeout)
+                cost = res.elapsed.total_seconds() * 1000 if res.ok else INFINITY
+            except Exception as e:
+                logger.warning('访问出错: %s', e)
+                cost = INFINITY
+            # http://stackoverflow.com/questions/6319207/are-lists-thread-safe
+            ranks.append((cost, self.host))
 
     threads = [HostCheckerThread(u) for u in hosts]
 
@@ -184,8 +171,8 @@ def rank_host_speed(exclude=None, timeout=(5, 10)):
     for t in threads:
         t.join()
 
-    available_hosts.sort()
-    return available_hosts
+    ranks.sort()
+    return ranks
 
 
 def filter_curriculum(curriculum, week, weekday=None):
