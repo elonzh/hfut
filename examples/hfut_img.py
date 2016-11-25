@@ -80,15 +80,17 @@ def fetch_img(term_code):
             logger.info('{} 班共有 {} 名学生'.format(class_stus['班级名称'], stu_num))
             stu_sum += stu_num
             for stu in class_stus['学生']:
+                year = str(stu['学号'] // 1000000)
+                code = str(stu['学号'])
                 img_url = six.moves.urllib.parse.urljoin(shortcuts.session.host, ''.join(
-                    ['student/photo/', stu['学号'][:4], '/', stu['学号'], file_suffix]))
+                    ['student/photo/', year, '/', code, file_suffix]))
                 sex = '男'
                 stu_name = stu['姓名']
                 if stu['姓名'].endswith('*'):
                     sex = '女'
                     stu_name = stu_name[:-1]
-                full_name = ''.join([stu['学号'], '-', sex, '-', stu_name])
-                filename = os.path.join(DIR_NAME, stu['学号'][:4], ''.join([full_name, file_suffix]))
+                full_name = ''.join([code, '-', sex, '-', stu_name])
+                filename = os.path.join(DIR_NAME, year, ''.join([full_name, file_suffix]))
                 if os.path.isfile(filename):
                     logger.warning('{} 的照片已下载过'.format(full_name))
                     exist_sum += 1

@@ -110,18 +110,20 @@ class GetClassStudents(BaseInterface):
         page = response.text
         # 狗日的网页代码写错了无法正确解析标签!
         term = ENV['TERM_PATTERN'].search(page)
-        # 大学英语拓展（一）0001班
-        # 大学语文    0001班
-        class_name_p = r'(?<=>)(\S+)\s*(\d{4}班)'
-        class_name = re.search(class_name_p, page, flags=re.UNICODE)
+        class_name_p = re.compile(r'>\s*\b(.+)\s*(\d{4}班)', flags=re.UNICODE)
+        class_name = class_name_p.search(page)
         # 虽然 \S 能解决匹配失败中文的问题, 但是最后的结果还是乱码的
-        stu_p = r'>\s*?(\d{1,3})\s*?</.*?>\s*?(\d{10})\s*?</.*?>\s*?([\u4e00-\u9fa5*]+)\s*?</'
-        stus = re.findall(stu_p, page, flags=re.DOTALL | re.UNICODE)
+        stu_p = re.compile(
+            r'>\s*(\d{10})\s*<'
+            r'.*?'
+            r'>\s*([\w*]{2,10})\s*<',
+            flags=re.DOTALL | re.UNICODE
+        )
+        stus = stu_p.findall(page)
         if term and class_name:
             term = term.group()
             class_name = ''.join(class_name.groups())
-            # stus = [{'序号': int(v[0]), '学号': int(v[1]), '姓名': v[2]} for v in stus]
-            stus = [{'学号': int(v[1]), '姓名': v[2]} for v in stus]
+            stus = [{'学号': int(v[0]), '姓名': v[1]} for v in stus]
             return {'学期': term, '班级名称': class_name, '学生': stus}
         else:
             log_result_not_found(response)

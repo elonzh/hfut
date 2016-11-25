@@ -52,7 +52,7 @@ class TestUtil(TestBase):
         with pytest.raises(AttributeError):
             assert util.term_str2code('第二学期')
 
-    def test_get_host_speed_rank(self):
+    def test_sort_hosts(self):
         r = util.sort_hosts([
             'http://172.18.6.93/',
             'http://172.18.6.94/',
@@ -63,8 +63,8 @@ class TestUtil(TestBase):
             'http://172.18.6.99/'
         ])
         assert len(r) == 7
-        assert util.sort_hosts(['http://qq.com'])[0][0] == 10000000
-        assert util.sort_hosts(timeout=0)[0][0] == 10000000
+        assert util.sort_hosts(['http://httpbin.org/'], path='status/500')[0][0] == 10000000
+        assert util.sort_hosts(['http://httpbin.org/'], timeout=0)[0][0] == 10000000
 
     def test_filter_curriculum(self, shortcuts):
         c = shortcuts.get_my_curriculum()['课表']

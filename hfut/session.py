@@ -6,12 +6,13 @@ from __future__ import unicode_literals, division
 
 import time
 from collections import deque
+from functools import reduce
 
 import requests
 import six
-from six.moves import urllib
+from six.moves.urllib import parse
 
-from .exception import SystemLoginFailed, IPBanned
+from .exception import SystemLoginFailed, IPBanned, ValidationError
 from .log import logger, report_response
 from .value import HF, ENV
 
@@ -44,10 +45,19 @@ class BaseSession(requests.Session):
         self.host = ENV[self.campus]
 
     def prepare_request(self, request):
-        # requests 在准备 url 进行解析, 因此只能在准备前将 url 换成完整的地址
-        # requests.models.PreparedRequest#prepare_url
-        if not urllib.parse.urlparse(request.url).netloc:
-            request.url = urllib.parse.urljoin(self.host, request.url)
+        parsed = parse.urlparse(request.url)
+        if ENV['REQUEST_ARGUMENTS_CHECK'] and (not parsed.netloc or parsed.netloc == parse.urlparse(self.host).netloc):
+            for k, v in reduce(lambda x, y: x + list(y.items()), (request.params, request.data), []):
+                pattern = ENV['ILLEGAL_CHARACTERS_PATTERN']
+                result = pattern.search(str(k)) or pattern.search(str(v))
+                if result:
+                    msg = ''.join(['参数中出现非法字符: ', result.group()])
+                    raise ValidationError(msg)
+        if not parsed.netloc:
+            # requests 在准备 url 进行解析, 因此只能在准备前将 url 换成完整的地址
+            # requests.models.PreparedRequest#prepare_url
+            request.url = parse.urljoin(self.host, request.url)
+
         return super(BaseSession, self).prepare_request(request)
 
     def send(self, request, **kwargs):
@@ -55,7 +65,9 @@ class BaseSession(requests.Session):
         所有接口用来发送请求的方法, 只是 :meth:`requests.sessions.Session.send` 的一个钩子方法, 用来处理请求前后的工作
         """
         response = super(BaseSession, self).send(request, **kwargs)
-        response.encoding = ENV['SITE_ENCODING']
+        parsed = parse.urlparse(response.url)
+        if parsed.netloc == parse.urlparse(self.host).netloc:
+            response.encoding = ENV['SITE_ENCODING']
         self.histories.append(response)
         logger.debug(report_response(response, redirection=kwargs.get('allow_redirects')))
         return response
@@ -144,9 +156,8 @@ class StudentSession(BaseSession):
                 raise SystemLoginFailed(msg)
 
         escaped_name = self.cookies.get('xsxm')
-        # https://pythonhosted.org/six/#module-six.moves.urllib.parse
         if six.PY3:
-            self.name = urllib.parse.unquote(escaped_name, ENV['SITE_ENCODING'])
+            self.name = parse.unquote(escaped_name, ENV['SITE_ENCODING'])
         else:
-            name = urllib.parse.unquote(escaped_name)
+            name = parse.unquote(escaped_name)
             self.name = name.decode(ENV['SITE_ENCODING'])

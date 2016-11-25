@@ -130,3 +130,4 @@ examples/img
 /tests/test_accounts.csv
 /.vscode/
 /debug.py
+/class_name_match_cases.txt

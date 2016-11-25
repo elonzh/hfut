@@ -125,25 +125,17 @@ def term_str2code(term_str):
     return cal_term_code(year, result[1] == '一')
 
 
-def sort_hosts(hosts=None, timeout=(5, 10)):
+def sort_hosts(hosts, method='GET', path='/', timeout=(5, 10), **kwargs):
     """
-    在宣城校区内网下测试各个内网地址的速度并返回排名, 当出现错误时消耗时间为 INFINITY = 10000000
+    测试各个地址的速度并返回排名, 当出现错误时消耗时间为 INFINITY = 10000000
 
-    :param hosts: 进行计算的主机地址列表, 如 `['http://222.195.8.201/']`, 如果不填则测试自带的列表
+    :param method: 请求方法
+    :param path: 默认的访问路径
+    :param hosts: 进行的主机地址列表, 如 `['http://222.195.8.201/']`
     :param timeout: 超时时间, 可以是一个浮点数或 形如 ``(连接超时, 读取超时)`` 的元祖
+    :param kwargs: 其他传递到 ``requests.request`` 的参数
     :return: 形如 ``[(访问耗时, 地址)]`` 的排名数据
     """
-    hosts = hosts or [
-        'http://222.195.8.201/',
-        'http://172.18.6.93/',
-        'http://172.18.6.94/',
-        'http://172.18.6.95/',
-        'http://172.18.6.96/',
-        'http://172.18.6.97/',
-        'http://172.18.6.98/',
-        'http://172.18.6.99/'
-    ]
-
     ranks = []
 
     class HostCheckerThread(Thread):
@@ -154,9 +146,10 @@ def sort_hosts(hosts=None, timeout=(5, 10)):
         def run(self):
             INFINITY = 10000000
             try:
-                # 访问一个数据库查询较多的页面
-                res = requests.get(urllib.parse.urljoin(self.host, 'teacher/asp/Jskb_table.asp'), timeout=timeout)
-                cost = res.elapsed.total_seconds() * 1000 if res.ok else INFINITY
+                url = urllib.parse.urljoin(self.host, path)
+                res = requests.request(method, url, timeout=timeout, **kwargs)
+                res.raise_for_status()
+                cost = res.elapsed.total_seconds() * 1000
             except Exception as e:
                 logger.warning('访问出错: %s', e)
                 cost = INFINITY
