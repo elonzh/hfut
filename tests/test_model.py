@@ -28,17 +28,18 @@ class TestGuest(TestBase):
         keys = ['学期', '班级名称', '学生']
         res = shortcuts.get_class_students('025', '123', '0001')
         assert res == {}
-        self.assert_dict_keys(res, keys)
         if shortcuts.session.campus == HF:
             res = shortcuts.get_class_students('022', '5202012B', '0001')
             assert res['班级名称'] == '大学语文0001班'  # 页面中是 "大学语文  0001班" , 去掉了中间的空白
             res = shortcuts.get_class_students('024', '9800010B', '0001')
+            self.assert_dict_keys(res, keys)
             assert res['学期'] == '2013-2014学年第二学期'
             assert res['班级名称'] == 'Calculus 1(微积分 I)0001班'
             assert len(res['学生']) == 5
             assert res['学生'][0] == {'姓名': '吴玮', '学号': 2013216291}
         else:
             res = shortcuts.get_class_students('026', '0400073B', '0001')
+            self.assert_dict_keys(res, keys)
             assert res['班级名称'] == '电子电路课程设计A0001班'
             assert res['学期'] == '2014-2015学年第二学期'
             assert len(res['学生']) == 45
