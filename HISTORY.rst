@@ -11,6 +11,23 @@
 
 .. :changelog:
 
+2.2.1 (20161127)
+++++++++++++++++
+
+**功能和改进**
+
+- 现在所有接口 ``parse`` 方法改为静态函数, 现在可以无需实例化便可解析响应了
+
+**问题修复**
+
+- 修复由于 Python 默认值陷阱导致 ``interface.BaseInterface`` 下的 ``send_kwarg`` , ``sextra_kwargs`` 在未被重新声明时所有子类公用同一个对象的问题
+- 有了全局非法字符检查后, 去除了 ``interface.EvaluateCourse`` 冗余的检查过程
+- 修复了 ``interface.BaseInterface`` 中的文档错误
+
+**接口变动**
+
+- 由于所有接口 ``parse`` 方法改为静态函数, ``interface.SetTelephone.parse`` 由原来返回值为是否修改成功改为直接返回修改后的结果(可能没变), 但 ``shortcut.Student#set_telephone`` 的行为是没有变的
+
 2.2.0 (20161125)
 ++++++++++++++++
 

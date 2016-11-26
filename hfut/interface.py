@@ -3,7 +3,6 @@ from __future__ import unicode_literals, division
 
 import re
 import time
-from copy import deepcopy
 
 import six
 from bs4 import SoupStrainer
@@ -26,23 +25,27 @@ class BaseInterface(object):
     """
     所有接口的类的基类, 所有的接口都必须继承这个类.
 
-    所有的接口都要实现方法 ``__init__`` 用来初始化 ``self.session`` 和 ``self.extra_kwargs``, 必须在所有的实现前调用基类的方法.
+    通过实现构造函数 ``__init__`` 用来初始化 ``self.extra_kwargs`` 用于生成请求需要的额外参数, 必须在所有的实现前调用基类的方法.
 
-    所有的接口都要实现方法 ``parse`` 用来将响应解析为规格化的结果.
+    所有的接口都要预定义 ``session_class`` , ``request_kwargs`` , ``send_kwargs`` 三个属性
+
+    所有的接口都要实现静态方法 ``parse`` 用来将响应解析为规格化的结果.
     """
     session_class = NotImplemented
-    request_kwargs = {
-        'method': NotImplemented, 'url': NotImplemented
-    }
-    extra_kwargs = {}
+    request_kwargs = NotImplemented
     # {'proxies': None, 'stream': None, 'verify': None, 'cert': None,'timeout': None, 'allow_redirects': True}
-    send_kwargs = {}
+    send_kwargs = NotImplemented
 
-    def parse(self, response):
-        raise NotImplemented('你需要实现对响应的解析过程')
+    def __init__(self):
+        self.extra_kwargs = {}
+
+    @staticmethod
+    def parse(response):
+        raise NotImplemented('你需要以静态方法的方式实现对响应的解析过程')
 
     def make_request(self):
-        kwargs = deepcopy(self.request_kwargs)
+        kwargs = {}
+        kwargs.update(self.request_kwargs)
         kwargs.update(self.extra_kwargs)
         req = Request(**kwargs)
         return req
@@ -54,8 +57,10 @@ class GetSystemStatus(BaseInterface):
         'method': 'get',
         'url': 'student/asp/s_welcome.asp'
     }
+    send_kwargs = {}
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         # 学期后有一个 </br> 便签, html.parser 会私自的将它替换为 </table> 导致无获取后面的 html
         # ss = SoupStrainer('table', height='85%')
         bs = GlobalFeaturedSoup(response.text)
@@ -98,15 +103,18 @@ class GetClassStudents(BaseInterface):
         'method': 'get',
         'url': 'student/asp/Jxbmdcx_1.asp'
     }
+    send_kwargs = {}
 
     def __init__(self, xqdm, kcdm, jxbh):
+        super(GetClassStudents, self).__init__()
         self.extra_kwargs['params'] = {
             'xqdm': xqdm,
             'kcdm': kcdm.upper(),
             'jxbh': jxbh
         }
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         # 狗日的网页代码写错了无法正确解析标签!
         term = ENV['TERM_PATTERN'].search(page)
@@ -136,15 +144,18 @@ class GetClassInfo(BaseInterface):
         'method': 'get',
         'url': 'student/asp/xqkb1_1.asp'
     }
+    send_kwargs = {}
 
     def __init__(self, xqdm, kcdm, jxbh):
+        super(GetClassInfo, self).__init__()
         self.extra_kwargs['params'] = {
             'xqdm': xqdm,
             'kcdm': kcdm.upper(),
             'jxbh': jxbh
         }
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         ss = SoupStrainer('table', width='600')
         bs = GlobalFeaturedSoup(page, parse_only=ss)
@@ -195,8 +206,10 @@ class SearchCourse(BaseInterface):
         'method': 'post',
         'url': 'student/asp/xqkb1.asp'
     }
+    send_kwargs = {}
 
     def __init__(self, xqdm, kcdm=None, kcmc=None):
+        super(SearchCourse, self).__init__()
         if kcdm is None and kcmc is None:
             raise ValueError('kcdm 和 kcdm 参数必须至少存在一个')
         self.extra_kwargs['data'] = {
@@ -205,7 +218,8 @@ class SearchCourse(BaseInterface):
             'kcmc': kcmc.encode(ENV['SITE_ENCODING']) if kcmc else None
         }
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         ss = SoupStrainer('table', width='650')
         bs = GlobalFeaturedSoup(page, parse_only=ss)
@@ -234,8 +248,10 @@ class GetTeachingPlan(BaseInterface):
         'method': 'post',
         'url': 'student/asp/xqkb2.asp'
     }
+    send_kwargs = {}
 
     def __init__(self, xqdm, kclx='b', zydm=''):
+        super(GetTeachingPlan, self).__init__()
         if kclx == 'b' and not zydm:
             raise ValueError('查询专业必修课必须提供专业代码')
         kclxdm = {'b': 1, 'x': 3}[kclx]
@@ -245,7 +261,8 @@ class GetTeachingPlan(BaseInterface):
             'ccjbyxzy': zydm
         }
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         ss = SoupStrainer('table', width='650')
         bs = GlobalFeaturedSoup(page, parse_only=ss)
@@ -277,11 +294,14 @@ class GetTeacherInfo(BaseInterface):
         'method': 'get',
         'url': 'teacher/asp/teacher_info.asp'
     }
+    send_kwargs = {}
 
     def __init__(self, jsh):
+        super(GetTeacherInfo, self).__init__()
         self.extra_kwargs['params'] = {'jsh': jsh}
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         ss = SoupStrainer('table')
         bs = GlobalFeaturedSoup(page, parse_only=ss)
@@ -311,11 +331,14 @@ class GetCourseClasses(BaseInterface):
         # 'student/asp/select_topRight.asp'
         'url': 'student/asp/select_topRight_f3.asp'
     }
+    send_kwargs = {}
 
     def __init__(self, kcdm):
+        super(GetCourseClasses, self).__init__()
         self.extra_kwargs['params'] = {'kcdm': kcdm.upper()}
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         ss = SoupStrainer('body')
         bs = GlobalFeaturedSoup(page, parse_only=ss)
@@ -370,11 +393,14 @@ class GetEntireCurriculum(BaseInterface):
         'method': 'get',
         'url': 'teacher/asp/Jskb_table.asp'
     }
+    send_kwargs = {}
 
     def __init__(self, xqdm=None):
+        super(GetEntireCurriculum, self).__init__()
         self.extra_kwargs['params'] = {'xqdm': xqdm}
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         ss = SoupStrainer('table', width='840')
         bs = GlobalFeaturedSoup(page, parse_only=ss)
@@ -409,8 +435,10 @@ class GetCode(BaseInterface):
         'method': 'get',
         'url': 'student/asp/xqjh.asp'
     }
+    send_kwargs = {}
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         ss = SoupStrainer('select')
         bs = GlobalFeaturedSoup(page, parse_only=ss)
@@ -428,8 +456,10 @@ class GetMyInfo(BaseInterface):
         'method': 'get',
         'url': 'student/asp/xsxxxxx.asp'
     }
+    send_kwargs = {}
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         ss = SoupStrainer('table')
         bs = GlobalFeaturedSoup(page, parse_only=ss)
@@ -470,8 +500,10 @@ class GetMyAchievements(BaseInterface):
         'method': 'get',
         'url': 'student/asp/Select_Success.asp'
     }
+    send_kwargs = {}
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         ss = SoupStrainer('table', width='582')
         bs = GlobalFeaturedSoup(page, parse_only=ss)
@@ -494,8 +526,10 @@ class GetMyCurriculum(BaseInterface):
         'method': 'get',
         'url': 'student/asp/grkb1.asp'
     }
+    send_kwargs = {}
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         ss = SoupStrainer('table', width='840')
         bs = GlobalFeaturedSoup(page, parse_only=ss)
@@ -530,8 +564,10 @@ class GetMyFees(BaseInterface):
         'method': 'get',
         'url': 'student/asp/Xfsf_Count.asp'
     }
+    send_kwargs = {}
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         ss = SoupStrainer('table', bgcolor='#000000')
         bs = GlobalFeaturedSoup(page, parse_only=ss)
@@ -555,8 +591,10 @@ class ChangePassword(BaseInterface):
         'method': 'post',
         'url': 'student/asp/amend_password_jg.asp'
     }
+    send_kwargs = {}
 
     def __init__(self, password, new_password):
+        super(ChangePassword, self).__init__()
         # 若不满足密码修改条件便不做请求
         if not ENV['XC_PASSWORD_PATTERN'].match(new_password):
             raise ValueError('密码为6-12位小写字母或数字')
@@ -568,7 +606,8 @@ class ChangePassword(BaseInterface):
         }
         self.new_password = new_password
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         ss = SoupStrainer('table', width='580', border='0', cellspacing='1', bgcolor='#000000')
         bs = GlobalFeaturedSoup(page, parse_only=ss)
@@ -576,7 +615,7 @@ class ChangePassword(BaseInterface):
         if res == '密码修改成功！':
             return True
         else:
-            logger.warning('密码修改失败\nnewpwd: %s\ntext: %s', self.new_password, res)
+            logger.warning('密码修改失败: %s', res)
             return False
 
 
@@ -586,8 +625,10 @@ class SetTelephone(BaseInterface):
         'method': 'post',
         'url': 'student/asp/amend_tel.asp'
     }
+    send_kwargs = {}
 
     def __init__(self, tel):
+        super(SetTelephone, self).__init__()
         tel = six.text_type(tel)
         p = re.compile(r'^\d{11,12}$|^\d{4}-\d{7}$')
         if not p.match(tel):
@@ -595,11 +636,12 @@ class SetTelephone(BaseInterface):
 
         self.extra_kwargs['data'] = {'tel': tel}
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         ss = SoupStrainer('input', attrs={'name': 'tel'})
         bs = GlobalFeaturedSoup(page, parse_only=ss)
-        return bs.input['value'] == self.extra_kwargs['data']['tel']
+        return bs.input['value']
 
 
 class GetUnfinishedEvaluation(BaseInterface):
@@ -608,8 +650,10 @@ class GetUnfinishedEvaluation(BaseInterface):
         'method': 'get',
         'url': 'student/asp/jxpglb.asp'
     }
+    send_kwargs = {}
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         ss = SoupStrainer('table', width='600', bgcolor='#000000')
         bs = GlobalFeaturedSoup(page, parse_only=ss)
@@ -630,14 +674,15 @@ class EvaluateCourse(BaseInterface):
         'method': 'post',
         'url': 'student/asp/Jxpg_2.asp'
     }
+    send_kwargs = {}
 
     def __init__(self, kcdm, jxbh,
                  r101=1, r102=1, r103=1, r104=1, r105=1, r106=1, r107=1, r108=1, r109=1,
                  r201=3, r202=3, advice=''):
+        super(EvaluateCourse, self).__init__()
         advice_length = len(advice)
-
-        if advice_length > 120 or re.search(r"[;']", advice):
-            raise ValueError('advice 不能超过120字且不能使用分号和单引号')
+        if advice_length > 120:
+            raise ValueError('advice 不能超过120字')
         value_map = ['01', '02', '03', '04', '05']
         self.extra_kwargs['data'] = {
             'kcdm': kcdm,
@@ -658,7 +703,8 @@ class EvaluateCourse(BaseInterface):
             # 'Maxtxt13': 120 - advice_length
         }
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         if re.search('您已经成功提交', response.text):
             return True
         else:
@@ -677,11 +723,13 @@ class GetOptionalCourses(BaseInterface):
     }
 
     def __init__(self, kclx='x'):
+        super(GetOptionalCourses, self).__init__()
         if kclx not in ('x', 'b', 'jh'):
             raise ValueError('kclx 参数不正确!')
         self.extra_kwargs['params'] = {'kclx': kclx}
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         ss = SoupStrainer('table', id='KCTable')
         bs = GlobalFeaturedSoup(page, parse_only=ss)
@@ -708,7 +756,8 @@ class GetSelectedCourses(BaseInterface):
         'allow_redirects': False
     }
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         page = response.text
         ss = SoupStrainer('table', id='TableXKJG')
         bs = GlobalFeaturedSoup(page, parse_only=ss)
@@ -737,9 +786,11 @@ class ChangeCourse(BaseInterface):
     }
 
     def __init__(self, account, kcdms_data, jxbhs_data):
+        super(ChangeCourse, self).__init__()
         self.extra_kwargs['data'] = {'xh': account, 'kcdm': kcdms_data, 'jxbh': jxbhs_data}
 
-    def parse(self, response):
+    @staticmethod
+    def parse(response):
         if response.status_code == 302:
             msg = '提交选课失败, 可能是身份验证过期或选课系统已关闭'
             logger.error(msg)

@@ -3,7 +3,6 @@ from __future__ import unicode_literals, division
 
 import json
 import time
-from copy import deepcopy
 from multiprocessing.dummy import Pool
 
 from .interface import GetSystemStatus, GetClassStudents, GetClassInfo, SearchCourse, GetTeachingPlan, \
@@ -21,7 +20,8 @@ class BaseShortcuts(object):
     session = NotImplemented
 
     def request(self, interface):
-        kwargs = deepcopy(interface.request_kwargs)
+        kwargs = {}
+        kwargs.update(interface.request_kwargs)
         kwargs.update(interface.send_kwargs)
         kwargs.update(interface.extra_kwargs)
         response = self.session.request(**kwargs)
@@ -204,7 +204,8 @@ class Student(Guest):
 
         :param tel: 电话号码, 需要满足手机和普通电话的格式, 例如 `18112345678` 或者 '0791-1234567'
         """
-        return self.query(SetTelephone(tel))
+
+        return type(tel)(self.query(SetTelephone(tel))) == tel
 
     # ========== 选课功能相关 ==========
     def get_optional_courses(self, kclx='x'):
