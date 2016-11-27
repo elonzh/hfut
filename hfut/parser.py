@@ -2,7 +2,7 @@
 """
 页面解析相关的函数,如果你想自己编写接口可能用得到
 """
-from __future__ import unicode_literals, division
+from __future__ import unicode_literals
 
 import re
 from pprint import pformat

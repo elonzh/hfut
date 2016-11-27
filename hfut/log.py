@@ -12,7 +12,7 @@ logger = Logger('hfut', level=WARNING)
 
 sh = StreamHandler()
 # https://docs.python.org/3/library/logging.html#logrecord-attributes
-fmt = Formatter('[%(levelname)s]%(module)s.%(funcName)s at %(lineno)d: %(message)s')
+fmt = Formatter('[%(levelname)s]: %(message)s')
 sh.setFormatter(fmt)
 logger.addHandler(sh)
 
@@ -50,6 +50,7 @@ def report_response(response,
         pieces.append(response_headers)
     if response_body:
         response_body = 'Response body: {response_body}'.format(response_body=response.text)
+        pieces.append(response_body)
 
     reporter = '\n'.join(pieces)
 

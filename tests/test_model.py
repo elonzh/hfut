@@ -31,6 +31,8 @@ class TestGuest(TestBase):
         if shortcuts.session.campus == HF:
             res = shortcuts.get_class_students('022', '5202012B', '0001')
             assert res['班级名称'] == '大学语文0001班'  # 页面中是 "大学语文  0001班" , 去掉了中间的空白
+            res = shortcuts.get_class_students('027', '0740150X', '0001')
+            assert res['班级名称'] == '|弹性力学及有限元0001班'
             res = shortcuts.get_class_students('024', '9800010B', '0001')
             self.assert_dict_keys(res, keys)
             assert res['学期'] == '2013-2014学年第二学期'

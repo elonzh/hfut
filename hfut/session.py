@@ -2,7 +2,7 @@
 """
 会话管理模块, 在 ``requests.Session`` 的基础上添加了一些针对接口的改进
 """
-from __future__ import unicode_literals, division
+from __future__ import unicode_literals
 
 import time
 from collections import deque

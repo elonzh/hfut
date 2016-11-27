@@ -118,7 +118,7 @@ class GetClassStudents(BaseInterface):
         page = response.text
         # 狗日的网页代码写错了无法正确解析标签!
         term = ENV['TERM_PATTERN'].search(page)
-        class_name_p = re.compile(r'>\s*\b(.+)\s*(\d{4}班)', flags=re.UNICODE)
+        class_name_p = re.compile(r'>\s*([^>]+)\s*(\d{4}班)', flags=re.UNICODE)
         class_name = class_name_p.search(page)
         # 虽然 \S 能解决匹配失败中文的问题, 但是最后的结果还是乱码的
         stu_p = re.compile(
@@ -225,8 +225,7 @@ class SearchCourse(BaseInterface):
         bs = GlobalFeaturedSoup(page, parse_only=ss)
         title = bs.find('tr', bgcolor='#FB9E04')
         trs = bs.find_all('tr', bgcolor=re.compile(r'#D6D3CE|#B4B9B9'))
-
-        if title and trs:
+        if title:
             courses = []
             keys = tuple(title.stripped_strings)
             value_list = parse_tr_strs(trs)

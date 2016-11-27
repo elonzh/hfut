@@ -11,6 +11,15 @@
 
 .. :changelog:
 
+2.2.2 (20161128)
+++++++++++++++++
+
+**问题修复**
+
+- 修复 ``interface.GetClassStudents`` 班级名称匹配的遗漏
+- 修复 ``log.report_response`` 遗漏的响应体内容
+- ``interface.SearchCourse`` 在没有搜索结果时不再给出警告, 搜索行为本来就可以没有结果
+
 2.2.1 (20161127)
 ++++++++++++++++
 
