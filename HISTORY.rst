@@ -21,6 +21,7 @@
 - 添加了 ``DEFAULT_HEADERS`` 配置, 用于初始化会话的请求头
 - 添加了 ``RAISE_FOR_STATUS`` 配置, 当状态响应码异常时是否触发错误, 默认不触发
 - 更新了 ``ILLEGAL_CHARACTERS_PATTERN`` 正则, 删除了误判的非法字符
+- ``shortcut.Student#get_selectable_courses`` 支持 ``pool_size`` 参数
 
 **问题修复**
 

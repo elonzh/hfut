@@ -35,10 +35,10 @@ ENV = {
     'SOUP_FEATURES': 'html.parser',
     # 是否启用参数检查
     'REQUEST_ARGUMENTS_CHECK': True,
-    # IP 禁用响应检查参数, 分别为响应体最小长度, 最大长度, 以及正则
-    'IP_BANNED_RESPONSE': (320, 335, re.compile(r'SQL通用防注入系统')),
     # 非法字符正则
     'ILLEGAL_CHARACTERS_PATTERN': re.compile(r'[,;*@$]'),
+    # IP 禁用响应检查参数, 分别为响应体最小长度, 最大长度, 以及正则
+    'IP_BANNED_RESPONSE': (320, 800, re.compile(r'SQL通用防注入')),
     # 学期名称正则
     'TERM_PATTERN': re.compile(r'(\d{4})(?:|学年)-\d{4}学年\s*第(一|二|二/三)学期(|/暑期)', flags=re.UNICODE),
     # 登录学号正则

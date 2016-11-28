@@ -347,7 +347,7 @@ class Student(Guest):
         result = [True if kcdm in selected_kcdms else False for kcdm in kcdms]
         return result
 
-    def get_selectable_courses(self, kcdms=None, dump_result=True, filename='可选课程.json', encoding='utf-8'):
+    def get_selectable_courses(self, kcdms=None, pool_size=5, dump_result=True, filename='可选课程.json', encoding='utf-8'):
         """
         获取所有能够选上的课程的课程班级, 注意这个方法遍历所给出的课程和它们的可选班级, 当选中人数大于等于课程容量时表示不可选.
 
@@ -375,14 +375,14 @@ class Student(Guest):
 
         def target(kcdm):
             course_classes = self.get_course_classes(kcdm)
-            if course_classes:
-                course_classes['可选班级'] = [c for c in course_classes['可选班级'] if c['课程容量'] > c['选中人数']]
-                if len(course_classes['可选班级']) > 0:
-                    # http://stackoverflow.com/questions/6319207/are-lists-thread-safe
-                    return course_classes
+            if not course_classes:
+                return
+            course_classes['可选班级'] = [c for c in course_classes['可选班级'] if c['课程容量'] > c['选中人数']]
+            if len(course_classes['可选班级']) > 0:
+                return course_classes
 
         # Python 2.7 不支持 with 语法
-        pool = Pool(5)
+        pool = Pool(pool_size)
         result = list(filter(None, pool.map(target, kcdms)))
         pool.close()
         pool.join()
