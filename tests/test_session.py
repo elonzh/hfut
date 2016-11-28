@@ -25,7 +25,7 @@ class TestSession(TestBase):
         origin = ENV['MAX_HISTORIES']
         s = BaseSession(XC)
         assert s.histories.maxlen == origin
-        new = random.randint[1, 9]
+        new = random.randint(1, 9)
         ENV['MAX_HISTORIES'] = new
         s = BaseSession(XC)
         assert s.histories.maxlen == new

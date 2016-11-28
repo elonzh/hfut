@@ -23,14 +23,6 @@ class BaseSession(requests.Session):
     """
     所有接口会话类的基类
     """
-    host = None
-    default_headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) '
-                      'AppleWebKit/537.36 (KHTML, like Gecko) '
-                      'Chrome/45.0.2454.101 Safari/537.36'
-    }
-    histories = deque(maxlen=ENV['MAX_HISTORIES'])
-
     def __init__(self, campus):
         """
         所以接口会话类的基类
@@ -38,8 +30,8 @@ class BaseSession(requests.Session):
         :param campus: 校区代码, 请使用 ``value`` 模块中的 ``HF``, ``XC`` 分别来区分合肥校区和宣城校区
         """
         super(BaseSession, self).__init__()
-        self.headers = self.default_headers
-
+        self.headers = ENV['DEFAULT_HEADERS']
+        self.histories = deque(maxlen=ENV['MAX_HISTORIES'])
         # 初始化时根据合肥选择不同的地址
         self.campus = campus.upper()
         self.host = ENV[self.campus]

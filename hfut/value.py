@@ -19,6 +19,12 @@ ENV = {
         'http://172.18.6.98/',
         'http://172.18.6.99/'
     ],
+    # 默认请求头
+    'DEFAULT_HEADERS': {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) '
+                      'AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/45.0.2454.101 Safari/537.36'
+    },
     # 每个会话保存的历史记录最多数量
     'MAX_HISTORIES': 10,
     # 当状态响应码异常时是否触发错误

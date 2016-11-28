@@ -18,6 +18,7 @@
 
 - 使用了快速判断 IP 被禁的算法, 将只在登录时进行的检查放到了每次响应,
 同时提供了 ``IP_BANNED_RESPONSE`` 配置参数, 确保出现变动时能即时纠正
+- 添加了 ``DEFAULT_HEADERS`` 配置, 用于初始化会话的请求头
 - 添加了 ``RAISE_FOR_STATUS`` 配置, 当状态响应码异常时是否触发错误, 默认不触发
 - 更新了 ``ILLEGAL_CHARACTERS_PATTERN`` 正则, 删除了误判的非法字符
 
