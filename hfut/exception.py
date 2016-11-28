@@ -6,7 +6,7 @@ class SystemLoginFailed(Exception):
     pass
 
 
-class IPBanned(SystemLoginFailed):
+class IPBanned(Exception):
     pass
 
 

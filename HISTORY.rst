@@ -11,6 +11,24 @@
 
 .. :changelog:
 
+2.2.3 (20161128)
+++++++++++++++++
+
+**功能和改进**
+
+- 使用了快速判断 IP 被禁的算法, 将只在登录时进行的检查放到了每次响应,
+同时提供了 ``IP_BANNED_RESPONSE`` 配置参数, 确保出现变动时能即时纠正
+- 添加了 ``RAISE_FOR_STATUS`` 配置, 当状态响应码异常时是否触发错误, 默认不触发
+- 更新了 ``ILLEGAL_CHARACTERS_PATTERN`` 正则, 删除了误判的非法字符
+
+**问题修复**
+
+- 修复 ``MAX_HISTORIES`` 配置项不起作用的问题
+
+**接口变动**
+
+- ``exception.IPBanned`` 不再继承自 ``exception.SystemLoginFailed``
+
 2.2.2 (20161128)
 ++++++++++++++++
 

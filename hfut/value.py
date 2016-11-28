@@ -21,17 +21,21 @@ ENV = {
     ],
     # 每个会话保存的历史记录最多数量
     'MAX_HISTORIES': 10,
-    # 响应页面的编码
+    # 当状态响应码异常时是否触发错误
+    'RAISE_FOR_STATUS': False,
+    # 教务页面的编码
     'SITE_ENCODING': 'GBK',
     # 全局使用的 BeautifulSoup 特性, 可以通过改变此值修改 HTML 解析器
     'SOUP_FEATURES': 'html.parser',
     # 是否启用参数检查
     'REQUEST_ARGUMENTS_CHECK': True,
+    # IP 禁用响应检查参数, 分别为响应体最小长度, 最大长度, 以及正则
+    'IP_BANNED_RESPONSE': (320, 335, re.compile(r'SQL通用防注入系统')),
     # 非法字符正则
-    'ILLEGAL_CHARACTERS_PATTERN': re.compile(r'[,;*_?@#$%&()+=><]'),
+    'ILLEGAL_CHARACTERS_PATTERN': re.compile(r'[,;*@$]'),
     # 学期名称正则
     'TERM_PATTERN': re.compile(r'(\d{4})(?:|学年)-\d{4}学年\s*第(一|二|二/三)学期(|/暑期)', flags=re.UNICODE),
-    # 学号正则
+    # 登录学号正则
     'ACCOUNT_PATTERN': re.compile(r'^\d{10}$'),
     # 宣城校区登录账号正则
     'XC_PASSWORD_PATTERN': re.compile(r'^[\da-z]{6,12}$'),

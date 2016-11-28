@@ -29,7 +29,7 @@ class BaseSession(requests.Session):
                       'AppleWebKit/537.36 (KHTML, like Gecko) '
                       'Chrome/45.0.2454.101 Safari/537.36'
     }
-    histories = deque(maxlen=10)
+    histories = deque(maxlen=ENV['MAX_HISTORIES'])
 
     def __init__(self, campus):
         """
@@ -46,6 +46,7 @@ class BaseSession(requests.Session):
 
     def prepare_request(self, request):
         parsed = parse.urlparse(request.url)
+        # 非法字符检查
         if ENV['REQUEST_ARGUMENTS_CHECK'] and (not parsed.netloc or parsed.netloc == parse.urlparse(self.host).netloc):
             for k, v in reduce(lambda x, y: x + list(y.items()), (request.params, request.data), []):
                 pattern = ENV['ILLEGAL_CHARACTERS_PATTERN']
@@ -65,9 +66,18 @@ class BaseSession(requests.Session):
         所有接口用来发送请求的方法, 只是 :meth:`requests.sessions.Session.send` 的一个钩子方法, 用来处理请求前后的工作
         """
         response = super(BaseSession, self).send(request, **kwargs)
+        if ENV['RAISE_FOR_STATUS']:
+            response.raise_for_status()
+
         parsed = parse.urlparse(response.url)
         if parsed.netloc == parse.urlparse(self.host).netloc:
             response.encoding = ENV['SITE_ENCODING']
+            # 快速判断响应 IP 是否被封, 那个警告响应内容长度为 327 或 328, 保留一点余量确保准确
+            min_length, max_length, pattern = ENV['IP_BANNED_RESPONSE']
+            if min_length <= len(response.content) <= max_length and pattern.search(response.text):
+                msg = '当前 IP 已被锁定, 如果可以请尝试切换教务系统地址, 否则请在更换网络环境或等待解封后重试!'
+                raise IPBanned(msg)
+
         self.histories.append(response)
         logger.debug(report_response(response, redirection=kwargs.get('allow_redirects')))
         return response
@@ -148,12 +158,8 @@ class StudentSession(BaseSession):
         response = super(StudentSession, self).request(method, url, data=data, allow_redirects=False)
         logged_in = response.status_code == 302
         if not logged_in:
-            if 'SQL通用防注入系统' in response.text:
-                msg = '当前 IP 已被锁定,如果是宣城校内访问请切换教务系统地址,否则请在更换网络环境后重试'
-                raise IPBanned(msg)
-            else:
-                msg = '登陆失败, 请检查你的账号和密码'
-                raise SystemLoginFailed(msg)
+            msg = '登陆失败, 请检查你的账号和密码'
+            raise SystemLoginFailed(msg)
 
         escaped_name = self.cookies.get('xsxm')
         if six.PY3:
