@@ -16,15 +16,6 @@ hfut - 合肥工业大学学生教务接口
 
 hfut 提供了合肥工业大学教务系统学生端接口并提供了方便开发者开发围绕学生数据的一些工具.
 
-
-QQ 群
-----------------
-
-你可以点这 `加入QQ群 <http://shang.qq.com/wpa/qunwpa?idkey=649d2da17d209065a5e662eb951f5b8ab971b7ed0daec0fe17e4db7b660b902d>`_ 或者扫描二维码加入我们.
-
-.. image:: docs/_static/qq_group_qr.png
-
-
 功能特性
 --------------------
 
