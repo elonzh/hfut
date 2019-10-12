@@ -14,6 +14,9 @@ hfut - 合肥工业大学学生教务接口
 .. image:: https://img.shields.io/travis/er1iang/hfut.svg
     :target: https://travis-ci.org/er1iang/hfut
 
+扇贝网正在招聘, 需要内推和实习加 QQ 911811744, 拉勾网链接 https://www.lagou.com/gongsi/13789.html
+--------------------
+
 hfut 提供了合肥工业大学教务系统学生端接口并提供了方便开发者开发围绕学生数据的一些工具.
 
 功能特性
